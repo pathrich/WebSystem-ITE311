@@ -21,11 +21,7 @@ class Home extends BaseController
 
     public function dashboard()
     {
-        $session = session();
-        if (! $session->get('isLoggedIn')) {
-            return redirect()->to(base_url('login'));
-        }
-
-        return view('dashboard');
+        // Deprecated. Route now points to Auth::dashboard.
+        return redirect()->to(base_url('dashboard'));
     }
 }

@@ -12,7 +12,7 @@ class Auth extends BaseController
             return redirect()->to(base_url('dashboard'));
         }
 
-        return view('login');
+        return view('auth/login');
     }
 
     public function attempt()
@@ -29,6 +29,8 @@ class Auth extends BaseController
             $session->set([
                 'isLoggedIn' => true,
                 'userEmail' => $email,
+                'userName' => $user['name'] ?? '',
+                'userRole' => $user['role'] ?? 'student',
             ]);
             return redirect()->to(base_url('dashboard'));
         }
@@ -50,7 +52,7 @@ class Auth extends BaseController
             return redirect()->to(base_url('dashboard'));
         }
 
-        return view('register');
+        return view('auth/register');
     }
 
     public function store()
@@ -96,5 +98,25 @@ class Auth extends BaseController
         return redirect()
             ->to(base_url('login'))
             ->with('register_success', 'Account created successfully. Please log in.');
+    }
+
+    public function dashboard()
+    {
+        $session = session();
+        if (! $session->get('isLoggedIn')) {
+            return redirect()->to(base_url('login'));
+        }
+
+        $userModel = new \App\Models\UserModel();
+        $user = $userModel->where('email', $session->get('userEmail'))->first();
+
+        $data = [
+            'userName'  => $user['name'] ?? $session->get('userEmail'),
+            'userEmail' => $user['email'] ?? $session->get('userEmail'),
+            'userRole'  => $user['role'] ?? $session->get('userRole') ?? 'guest',
+            'stats'     => [],
+        ];
+
+        return view('auth/dashboard', $data);
     }
 }
