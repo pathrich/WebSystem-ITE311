@@ -107,16 +107,66 @@ class Auth extends BaseController
             return redirect()->to(base_url('login'));
         }
 
-        $userModel = new \App\Models\UserModel();
-        $user = $userModel->where('email', $session->get('userEmail'))->first();
+        try {
+            $userModel = new \App\Models\UserModel();
+            $user = $userModel->where('email', $session->get('userEmail'))->first();
 
-        $data = [
-            'userName'  => $user['name'] ?? $session->get('userEmail'),
-            'userEmail' => $user['email'] ?? $session->get('userEmail'),
-            'userRole'  => $user['role'] ?? $session->get('userRole') ?? 'guest',
-            'stats'     => [],
-        ];
+            $data = [
+                'userName'  => $user['name'] ?? $session->get('userEmail'),
+                'userEmail' => $user['email'] ?? $session->get('userEmail'),
+                'userRole'  => $user['role'] ?? $session->get('userRole') ?? 'student',
+                'stats'     => [],
+                'enrollments' => [],
+                'availableCourses' => [],
+            ];
 
-        return view('auth/dashboard', $data);
+            // Load role-specific data
+            $role = strtolower($data['userRole']);
+            
+            if ($role === 'student') {
+                // Load enrollment data for students
+                $enrollmentModel = new \App\Models\EnrollmentModel();
+                $courseModel = new \App\Models\CourseModel();
+                
+                $data['enrollments'] = $enrollmentModel->getUserEnrollments($user['id']);
+                $data['availableCourses'] = $courseModel->getAvailableCoursesForUser($user['id']);
+                
+                // Student stats
+                $data['stats']['student'] = [
+                    'enrolled' => count($data['enrollments']),
+                    'average' => 'N/A'
+                ];
+                
+            } elseif ($role === 'teacher') {
+                // Load teacher data
+                $courseModel = new \App\Models\CourseModel();
+                $teacherCourses = $courseModel->where('instructor_id', $user['id'])->findAll();
+                
+                $data['stats']['teacher'] = [
+                    'classes' => count($teacherCourses),
+                    'assignments' => 0,
+                    'submissions' => 0
+                ];
+                
+            } elseif ($role === 'admin') {
+                // Load admin data
+                $userModel = new \App\Models\UserModel();
+                $courseModel = new \App\Models\CourseModel();
+                
+                $totalUsers = $userModel->countAllResults();
+                $totalCourses = $courseModel->countAllResults();
+                
+                $data['stats']['admin'] = [
+                    'users' => $totalUsers,
+                    'courses' => $totalCourses,
+                    'reports' => 0
+                ];
+            }
+
+            return view('auth/dashboard', $data);
+        } catch (Exception $e) {
+            // If there's any error, show a simple error message
+            return "Dashboard error: " . $e->getMessage();
+        }
     }
 }

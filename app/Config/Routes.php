@@ -23,7 +23,11 @@ $routes->get('/dashboard', 'Auth::dashboard');
 $routes->get('/register', 'Auth::register');
 $routes->post('/register', 'Auth::store');
 
+// Course Management
+$routes->post('/course/enroll', 'Course::enroll');
+
 // Labs
 $routes->get('/lab5', static function() {
     return view('labs/lab5');
 });
+

@@ -11,6 +11,7 @@
 </head>
 <body>
   <!-- Navbar -->
+  <?php $isLoggedIn = (bool) session('isLoggedIn'); $role = strtolower((string) session('userRole')); ?>
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container">
       <a class="navbar-brand" href="#">ITE311-DAYAO</a>
@@ -18,13 +19,13 @@
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
+        <?php if (!$isLoggedIn): ?>
         <ul class="navbar-nav me-auto">
           <li class="nav-item"><a class="nav-link" href="<?= site_url('/') ?>">Home</a></li>
           <li class="nav-item"><a class="nav-link" href="<?= site_url('about') ?>">About</a></li>
           <li class="nav-item"><a class="nav-link" href="<?= site_url('contact') ?>">Contact</a></li>
         </ul>
-
-        <?php $isLoggedIn = (bool) session('isLoggedIn'); $role = strtolower((string) session('userRole')); ?>
+        <?php endif; ?>
 
         <?php if ($isLoggedIn): ?>
           <!-- User Info & Role Display -->
