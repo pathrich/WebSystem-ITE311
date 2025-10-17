@@ -1,0 +1,8 @@
+/vendor/
+/writable/
+/node_modules/
+.env
+.env
+/.idea/
+*.log
+.DS_Store
