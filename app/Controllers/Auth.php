@@ -26,13 +26,24 @@ class Auth extends BaseController
         $user = $userModel->where('email', $email)->first();
         if ($user && password_verify($password, $user['password'])) {
             $session = session();
+            $userRole = $user['role'] ?? 'student';
             $session->set([
                 'isLoggedIn' => true,
                 'userEmail' => $email,
                 'userName' => $user['name'] ?? '',
-                'userRole' => $user['role'] ?? 'student',
+                'userRole' => $userRole,
             ]);
-            return redirect()->to(base_url('dashboard'));
+
+            // Redirect based on role
+            $role = strtolower($userRole);
+            if ($role === 'teacher') {
+                return redirect()->to(base_url('teacher/dashboard'));
+            } elseif ($role === 'admin') {
+                return redirect()->to(base_url('admin/dashboard'));
+            }
+
+            // default: student
+            return redirect()->to(base_url('announcements'));
         }
 
         return redirect()->back()->with('login_error', 'Invalid credentials');
