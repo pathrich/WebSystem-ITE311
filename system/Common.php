@@ -1255,3 +1255,13 @@ if (! function_exists('trait_uses_recursive')) {
         return $traits;
     }
 }
+
+if (! function_exists('is_production')) {
+    /**
+     * Check if the application is running in production environment.
+     */
+    function is_production(): bool
+    {
+        return ENVIRONMENT === 'production';
+    }
+}

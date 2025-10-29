@@ -43,14 +43,73 @@
             </div>
         </div>
     </div>
-    <div class="card border-0 shadow-sm">
-        <div class="card-header bg-dark text-white">Admin Tools</div>
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Admin Tools</h5>
+        </div>
         <div class="card-body">
             <ul class="mb-0">
                 <li>Manage Users</li>
                 <li>Manage Courses</li>
                 <li>View System Reports</li>
             </ul>
+        </div>
+    </div>
+    
+    <!-- Course Management for Admin -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Course Management</h5>
+        </div>
+        <div class="card-body">
+            <?php if (!empty($adminCourses)): ?>
+                <?php foreach ($adminCourses as $courseData): ?>
+                    <div class="card mb-3">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0"><?= esc($courseData['course']['title']) ?></h6>
+                            <a href="<?= base_url('admin/course/' . $courseData['course']['id'] . '/upload') ?>" 
+                               class="btn btn-sm btn-primary">
+                                <i class="fas fa-upload me-1"></i> Upload Materials
+                            </a>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted small mb-2"><?= esc($courseData['course']['description']) ?></p>
+                            <small class="text-muted">
+                                <i class="fas fa-user me-1"></i> Instructor: <?= esc($courseData['course']['instructor_name']) ?>
+                            </small>
+                            
+                            <?php if (!empty($courseData['materials'])): ?>
+                                <hr class="my-2">
+                                <div class="materials-list">
+                                    <h6 class="small text-muted mb-2">
+                                        <i class="fas fa-file-alt me-1"></i> 
+                                        Materials (<?= count($courseData['materials']) ?>)
+                                    </h6>
+                                    <?php foreach ($courseData['materials'] as $material): ?>
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <small>
+                                                <i class="fas fa-file-pdf text-danger me-1"></i>
+                                                <?= esc($material['file_name']) ?>
+                                            </small>
+                                            <small class="text-muted">
+                                                <?= date('M d, Y', strtotime($material['created_at'])) ?>
+                                            </small>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php else: ?>
+                                <hr class="my-2">
+                                <small class="text-muted"><i class="fas fa-info-circle me-1"></i> No materials uploaded yet</small>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-folder-open fa-3x mb-3"></i>
+                    <p>No courses available.</p>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -81,14 +140,70 @@
             </div>
         </div>
     </div>
-    <div class="card border-0 shadow-sm">
-        <div class="card-header bg-dark text-white">Teacher Center</div>
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Teacher Center</h5>
+        </div>
         <div class="card-body">
             <ul class="mb-0">
                 <li>Create/Manage Assignments</li>
                 <li>Grade Submissions</li>
                 <li>Communicate with Students</li>
             </ul>
+        </div>
+    </div>
+    
+    <!-- Course Management for Teacher -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">My Courses</h5>
+        </div>
+        <div class="card-body">
+            <?php if (!empty($teacherCourses)): ?>
+                <?php foreach ($teacherCourses as $courseData): ?>
+                    <div class="card mb-3">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0"><?= esc($courseData['course']['title']) ?></h6>
+                            <a href="<?= base_url('admin/course/' . $courseData['course']['id'] . '/upload') ?>" 
+                               class="btn btn-sm btn-primary">
+                                <i class="fas fa-upload me-1"></i> Upload Materials
+                            </a>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted small mb-2"><?= esc($courseData['course']['description']) ?></p>
+                            
+                            <?php if (!empty($courseData['materials'])): ?>
+                                <hr class="my-2">
+                                <div class="materials-list">
+                                    <h6 class="small text-muted mb-2">
+                                        <i class="fas fa-file-alt me-1"></i> 
+                                        Materials (<?= count($courseData['materials']) ?>)
+                                    </h6>
+                                    <?php foreach ($courseData['materials'] as $material): ?>
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <small>
+                                                <i class="fas fa-file-pdf text-danger me-1"></i>
+                                                <?= esc($material['file_name']) ?>
+                                            </small>
+                                            <small class="text-muted">
+                                                <?= date('M d, Y', strtotime($material['created_at'])) ?>
+                                            </small>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php else: ?>
+                                <hr class="my-2">
+                                <small class="text-muted"><i class="fas fa-info-circle me-1"></i> No materials uploaded yet</small>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-folder-open fa-3x mb-3"></i>
+                    <p>No courses assigned to you.</p>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -134,16 +249,45 @@
                                 <div class="card-body">
                                     <h6 class="card-title text-primary"><?= esc($enrollment['title']) ?></h6>
                                     <p class="card-text text-muted small"><?= esc($enrollment['description']) ?></p>
-                                    <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
                                         <small class="text-muted">
                                             <i class="fas fa-user me-1"></i>
                                             Instructor: <?= esc($enrollment['instructor_name']) ?>
                                         </small>
-                                                <small class="text-muted">
-                                                    <i class="fas fa-calendar me-1"></i>
-                                                    Enrolled: <?= date('M d, Y', strtotime($enrollment['enrolled_at'])) ?>
-                                                </small>
+                                        <small class="text-muted">
+                                            <i class="fas fa-calendar me-1"></i>
+                                            Enrolled: <?= date('M d, Y', strtotime($enrollment['enrolled_at'])) ?>
+                                        </small>
                                     </div>
+                                    
+                                    <!-- Display Materials for this course -->
+                                    <?php if (isset($courseMaterials[$enrollment['course_id']])): ?>
+                                        <hr class="my-2">
+                                        <div class="materials-section">
+                                            <h6 class="text-muted small mb-2"><i class="fas fa-file-alt me-1"></i> Course Materials:</h6>
+                                            <div class="list-group list-group-flush">
+                                                <?php foreach ($courseMaterials[$enrollment['course_id']]['materials'] as $material): ?>
+                                                    <div class="list-group-item px-0 py-2 border-0">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <div>
+                                                                <i class="fas fa-file-pdf text-danger me-2"></i>
+                                                                <small><?= esc($material['file_name']) ?></small>
+                                                            </div>
+                                                            <a href="<?= base_url('materials/download/' . $material['id']) ?>" 
+                                                               class="btn btn-sm btn-outline-primary"
+                                                               title="Download <?= esc($material['file_name']) ?>">
+                                                                <i class="fas fa-download"></i>
+                                                            </a>
+                                                        </div>
+                                                        <small class="text-muted d-block mt-1">
+                                                            <i class="fas fa-clock me-1"></i>
+                                                            <?= date('M d, Y', strtotime($material['created_at'])) ?>
+                                                        </small>
+                                                    </div>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         <?php endforeach; ?>

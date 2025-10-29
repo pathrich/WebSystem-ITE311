@@ -26,24 +26,13 @@ class Auth extends BaseController
         $user = $userModel->where('email', $email)->first();
         if ($user && password_verify($password, $user['password'])) {
             $session = session();
-            $userRole = $user['role'] ?? 'student';
             $session->set([
                 'isLoggedIn' => true,
                 'userEmail' => $email,
                 'userName' => $user['name'] ?? '',
-                'userRole' => $userRole,
+                'userRole' => $user['role'] ?? 'student',
             ]);
-
-            // Redirect based on role
-            $role = strtolower($userRole);
-            if ($role === 'teacher') {
-                return redirect()->to(base_url('teacher/dashboard'));
-            } elseif ($role === 'admin') {
-                return redirect()->to(base_url('admin/dashboard'));
-            }
-
-            // default: student
-            return redirect()->to(base_url('announcements'));
+            return redirect()->to(base_url('dashboard'));
         }
 
         return redirect()->back()->with('login_error', 'Invalid credentials');
@@ -133,40 +122,80 @@ class Auth extends BaseController
 
             // Load role-specific data
             $role = strtolower($data['userRole']);
-            
+
             if ($role === 'student') {
                 // Load enrollment data for students
                 $enrollmentModel = new \App\Models\EnrollmentModel();
                 $courseModel = new \App\Models\CourseModel();
-                
+                $materialModel = new \App\Models\MaterialModel();
+
                 $data['enrollments'] = $enrollmentModel->getUserEnrollments($user['id']);
                 $data['availableCourses'] = $courseModel->getAvailableCoursesForUser($user['id']);
-                
+
+                // Load materials for enrolled courses
+                $data['courseMaterials'] = [];
+                foreach ($data['enrollments'] as $enrollment) {
+                    $materials = $materialModel->getMaterialsByCourse($enrollment['course_id']);
+                    if (!empty($materials)) {
+                        $data['courseMaterials'][$enrollment['course_id']] = [
+                            'course' => $enrollment,
+                            'materials' => $materials
+                        ];
+                    }
+                }
+
                 // Student stats
                 $data['stats']['student'] = [
                     'enrolled' => count($data['enrollments']),
                     'average' => 'N/A'
                 ];
-                
+
             } elseif ($role === 'teacher') {
                 // Load teacher data
                 $courseModel = new \App\Models\CourseModel();
+                $materialModel = new \App\Models\MaterialModel();
+
                 $teacherCourses = $courseModel->where('instructor_id', $user['id'])->findAll();
-                
+
+                // Load materials for teacher's courses
+                $data['teacherCourses'] = [];
+                foreach ($teacherCourses as $course) {
+                    $materials = $materialModel->getMaterialsByCourse($course['id']);
+                    $data['teacherCourses'][] = [
+                        'course' => $course,
+                        'materials' => $materials
+                    ];
+                }
+
                 $data['stats']['teacher'] = [
                     'classes' => count($teacherCourses),
                     'assignments' => 0,
                     'submissions' => 0
                 ];
-                
+
             } elseif ($role === 'admin') {
                 // Load admin data
                 $userModel = new \App\Models\UserModel();
                 $courseModel = new \App\Models\CourseModel();
-                
+                $materialModel = new \App\Models\MaterialModel();
+
                 $totalUsers = $userModel->countAllResults();
                 $totalCourses = $courseModel->countAllResults();
-                
+
+                // Load all courses with materials for admin
+                $allCourses = $courseModel->select('courses.*, users.name as instructor_name')
+                    ->join('users', 'users.id = courses.instructor_id')
+                    ->findAll();
+
+                $data['adminCourses'] = [];
+                foreach ($allCourses as $course) {
+                    $materials = $materialModel->getMaterialsByCourse($course['id']);
+                    $data['adminCourses'][] = [
+                        'course' => $course,
+                        'materials' => $materials
+                    ];
+                }
+
                 $data['stats']['admin'] = [
                     'users' => $totalUsers,
                     'courses' => $totalCourses,

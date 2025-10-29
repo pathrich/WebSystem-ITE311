@@ -71,7 +71,7 @@ class MigrateRefresh extends BaseCommand
     {
         $params['b'] = 0;
 
-        if (ENVIRONMENT === 'production') {
+        if (is_production()) {
             // @codeCoverageIgnoreStart
             $force = array_key_exists('f', $params) || CLI::getOption('f');
 

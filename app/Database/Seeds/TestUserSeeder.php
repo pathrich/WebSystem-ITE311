@@ -8,6 +8,13 @@ class TestUserSeeder extends Seeder
 {
     public function run()
     {
+        // Check if users already exist to avoid duplicates
+        $existingUsers = $this->db->table('users')->countAllResults();
+        if ($existingUsers > 0) {
+            echo "Users already exist. Skipping TestUserSeeder.\n";
+            return;
+        }
+
         // Create test users with different roles
         $testUsers = [
             [

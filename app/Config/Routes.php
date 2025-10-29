@@ -23,22 +23,6 @@ $routes->get('/dashboard', 'Auth::dashboard');
 $routes->get('/register', 'Auth::register');
 $routes->post('/register', 'Auth::store');
 
-// Announcements
-$routes->get('/announcements', 'Announcement::index');
-
-// Role-specific dashboards
-$routes->get('/teacher/dashboard', 'Teacher::dashboard');
-$routes->get('/admin/dashboard', 'Admin::dashboard');
-
-// Protect admin and teacher groups using RoleAuth filter (applied here at route-level)
-$routes->group('admin', ['filter' => 'roleauth'], function($routes){
-    $routes->get('dashboard', 'Admin::dashboard');
-});
-
-$routes->group('teacher', ['filter' => 'roleauth'], function($routes){
-    $routes->get('dashboard', 'Teacher::dashboard');
-});
-
 // Course Management
 $routes->post('/course/enroll', 'Course::enroll');
 
@@ -46,4 +30,10 @@ $routes->post('/course/enroll', 'Course::enroll');
 $routes->get('/lab5', static function() {
     return view('labs/lab5');
 });
+
+// Materials Management
+$routes->get('/admin/course/(:num)/upload', 'Materials::upload/$1');
+$routes->post('/admin/course/(:num)/upload', 'Materials::upload/$1');
+$routes->get('/materials/delete/(:num)', 'Materials::delete/$1');
+$routes->get('/materials/download/(:num)', 'Materials::download/$1');
 
