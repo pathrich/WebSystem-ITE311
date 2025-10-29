@@ -13,7 +13,7 @@
                 <div class="card">
                     <div class="card-header">
                         <h3>Upload Materials for: <?= esc($course['title']) ?></h3>
-                        <a href="/dashboard" class="btn btn-secondary btn-sm">Back to Dashboard</a>
+                        <a href="<?= base_url('dashboard') ?>" class="btn btn-secondary btn-sm">Back to Dashboard</a>
                     </div>
                     <div class="card-body">
                         <!-- Display flash messages -->
@@ -30,7 +30,7 @@
                         <?php endif; ?>
 
                         <!-- Upload Form -->
-                        <form action="/admin/course/<?= $course['id'] ?>/upload" method="post" enctype="multipart/form-data">
+                        <form action="<?= base_url('materials/upload/' . $course['id']) ?>" method="post" enctype="multipart/form-data">
                             <?= csrf_field() ?>
                             <div class="mb-3">
                                 <label for="material_file" class="form-label">Select Material File</label>
@@ -61,10 +61,10 @@
                                             </small>
                                         </div>
                                         <div>
-                                            <a href="/materials/download/<?= $material['id'] ?>" class="btn btn-sm btn-outline-primary me-2" target="_blank">
+                                            <a href="<?= base_url('materials/download/' . $material['id']) ?>" class="btn btn-sm btn-outline-primary me-2" target="_blank">
                                                 Download
                                             </a>
-                                            <a href="/materials/delete/<?= $material['id'] ?>" class="btn btn-sm btn-outline-danger"
+                                            <a href="<?= base_url('materials/delete/' . $material['id']) ?>" class="btn btn-sm btn-outline-danger"
                                                onclick="return confirm('Are you sure you want to delete this material?')">
                                                 Delete
                                             </a>

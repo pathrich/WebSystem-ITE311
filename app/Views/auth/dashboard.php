@@ -14,6 +14,23 @@
     <span class="ms-2 text-muted">(<?= esc($userEmail ?? '') ?>)</span>
 </div>
 
+<!-- Display flash messages -->
+<?php if (session()->getFlashdata('success')): ?>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-2"></i>
+        <?= session()->getFlashdata('success') ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+<?php endif; ?>
+
+<?php if (session()->getFlashdata('error')): ?>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <?= session()->getFlashdata('error') ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+<?php endif; ?>
+
 <?php $role = strtolower((string)($userRole ?? '')); ?>
 
 <?php if ($role === 'admin'): ?>
@@ -67,10 +84,26 @@
                     <div class="card mb-3">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h6 class="mb-0"><?= esc($courseData['course']['title']) ?></h6>
-                            <a href="<?= base_url('admin/course/' . $courseData['course']['id'] . '/upload') ?>" 
-                               class="btn btn-sm btn-primary">
+                            <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#uploadCollapseAdmin<?= $courseData['course']['id'] ?>" aria-expanded="false" aria-controls="uploadCollapseAdmin<?= $courseData['course']['id'] ?>">
                                 <i class="fas fa-upload me-1"></i> Upload Materials
-                            </a>
+                            </button>
+                        </div>
+                        <div class="collapse" id="uploadCollapseAdmin<?= $courseData['course']['id'] ?>">
+                            <div class="card-body">
+                                <!-- Upload Form -->
+                                <form action="<?= base_url('materials/upload/' . $courseData['course']['id']) ?>" method="post" enctype="multipart/form-data" class="mb-3">
+                                    <?= csrf_field() ?>
+                                    <div class="mb-3">
+                                        <label for="material_file_admin<?= $courseData['course']['id'] ?>" class="form-label">Select Material File</label>
+                                        <input type="file" class="form-control" id="material_file_admin<?= $courseData['course']['id'] ?>" name="material_file" required
+                                               accept=".pdf,.ppt,.pptx,.doc,.docx">
+                                        <div class="form-text">
+                                            Allowed file types: PDF, PPT, PPTX, DOC, DOCX. Maximum size: 10MB.
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-success btn-sm">Upload</button>
+                                </form>
+                            </div>
                         </div>
                         <div class="card-body">
                             <p class="text-muted small mb-2"><?= esc($courseData['course']['description']) ?></p>
@@ -91,9 +124,16 @@
                                                 <i class="fas fa-file-pdf text-danger me-1"></i>
                                                 <?= esc($material['file_name']) ?>
                                             </small>
-                                            <small class="text-muted">
-                                                <?= date('M d, Y', strtotime($material['created_at'])) ?>
-                                            </small>
+                                            <div>
+                                                <small class="text-muted me-2">
+                                                    <?= date('M d, Y', strtotime($material['created_at'])) ?>
+                                                </small>
+                                                <a href="<?= base_url('materials/delete/' . $material['id']) ?>"
+                                                   class="btn btn-sm btn-outline-danger"
+                                                   onclick="return confirm('Are you sure you want to delete this material?')">
+                                                    <i class="fas fa-trash me-1"></i>Delete
+                                                </a>
+                                            </div>
                                         </div>
                                     <?php endforeach; ?>
                                 </div>
@@ -145,6 +185,11 @@
             <h5 class="mb-0">Teacher Center</h5>
         </div>
         <div class="card-body">
+            <div class="d-flex gap-2 mb-3">
+                <a href="<?= base_url('course/create') ?>" class="btn btn-success btn-sm">
+                    <i class="fas fa-plus me-1"></i>Create Course
+                </a>
+            </div>
             <ul class="mb-0">
                 <li>Create/Manage Assignments</li>
                 <li>Grade Submissions</li>
@@ -156,7 +201,7 @@
     <!-- Course Management for Teacher -->
     <div class="card border-0 shadow-sm">
         <div class="card-header bg-dark text-white">
-            <h5 class="mb-0">My Courses</h5>
+            <h5 class="mb-0">Course Management</h5>
         </div>
         <div class="card-body">
             <?php if (!empty($teacherCourses)): ?>
@@ -164,10 +209,31 @@
                     <div class="card mb-3">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h6 class="mb-0"><?= esc($courseData['course']['title']) ?></h6>
-                            <a href="<?= base_url('admin/course/' . $courseData['course']['id'] . '/upload') ?>" 
-                               class="btn btn-sm btn-primary">
-                                <i class="fas fa-upload me-1"></i> Upload Materials
-                            </a>
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#uploadCollapseTeacher<?= $courseData['course']['id'] ?>" aria-expanded="false" aria-controls="uploadCollapseTeacher<?= $courseData['course']['id'] ?>">
+                                    <i class="fas fa-upload me-1"></i> Upload Materials
+                                </button>
+                                <a href="<?= base_url('course/edit/' . $courseData['course']['id']) ?>" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-edit me-1"></i> Edit
+                                </a>
+                            </div>
+                        </div>
+                        <div class="collapse" id="uploadCollapseTeacher<?= $courseData['course']['id'] ?>">
+                            <div class="card-body">
+                                <!-- Upload Form -->
+                                <form action="<?= base_url('materials/upload/' . $courseData['course']['id']) ?>" method="post" enctype="multipart/form-data" class="mb-3">
+                                    <?= csrf_field() ?>
+                                    <div class="mb-3">
+                                        <label for="material_file_teacher<?= $courseData['course']['id'] ?>" class="form-label">Select Material File</label>
+                                        <input type="file" class="form-control" id="material_file_teacher<?= $courseData['course']['id'] ?>" name="material_file" required
+                                               accept=".pdf,.ppt,.pptx,.doc,.docx">
+                                        <div class="form-text">
+                                            Allowed file types: PDF, PPT, PPTX, DOC, DOCX. Maximum size: 10MB.
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-success btn-sm">Upload</button>
+                                </form>
+                            </div>
                         </div>
                         <div class="card-body">
                             <p class="text-muted small mb-2"><?= esc($courseData['course']['description']) ?></p>
@@ -185,9 +251,16 @@
                                                 <i class="fas fa-file-pdf text-danger me-1"></i>
                                                 <?= esc($material['file_name']) ?>
                                             </small>
-                                            <small class="text-muted">
-                                                <?= date('M d, Y', strtotime($material['created_at'])) ?>
-                                            </small>
+                                            <div>
+                                                <small class="text-muted me-2">
+                                                    <?= date('M d, Y', strtotime($material['created_at'])) ?>
+                                                </small>
+                                                <a href="<?= base_url('materials/delete/' . $material['id']) ?>"
+                                                   class="btn btn-sm btn-outline-danger"
+                                                   onclick="return confirm('Are you sure you want to delete this material?')">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            </div>
                                         </div>
                                     <?php endforeach; ?>
                                 </div>
@@ -273,10 +346,10 @@
                                                                 <i class="fas fa-file-pdf text-danger me-2"></i>
                                                                 <small><?= esc($material['file_name']) ?></small>
                                                             </div>
-                                                            <a href="<?= base_url('materials/download/' . $material['id']) ?>" 
+                                                            <a href="<?= base_url('materials/download/' . $material['id']) ?>"
                                                                class="btn btn-sm btn-outline-primary"
                                                                title="Download <?= esc($material['file_name']) ?>">
-                                                                <i class="fas fa-download"></i>
+                                                                <i class="fas fa-download me-1"></i>Download
                                                             </a>
                                                         </div>
                                                         <small class="text-muted d-block mt-1">

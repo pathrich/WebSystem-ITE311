@@ -4,14 +4,14 @@ namespace App\Database\Seeds;
 
 use CodeIgniter\Database\Seeder;
 
-class TestCourseSeeder extends Seeder
+class CourseSeeder extends Seeder
 {
     public function run()
     {
         // Get teacher user ID
-        $teacher = $this->db->table('users')->where('email', 'teacher@test.com')->get()->getRowArray();
+        $teacher = $this->db->table('users')->where('email', 'teacher@example.com')->get()->getRowArray();
         if (!$teacher) {
-            echo "No teacher user found. Please run TestUserSeeder first.\n";
+            echo "No teacher user found. Please run UserSeeder first.\n";
             return;
         }
 

@@ -17,6 +17,211 @@ class Course extends BaseController
     }
 
     /**
+     * Display create course form
+     */
+    public function create()
+    {
+        // Check if user is logged in and is teacher or admin
+        $session = session();
+        if (!$session->get('isLoggedIn')) {
+            return redirect()->to('/login')->with('error', 'You must be logged in to access this page.');
+        }
+
+        $userRole = $session->get('userRole');
+        if ($userRole !== 'admin' && $userRole !== 'teacher') {
+            return redirect()->to('/dashboard')->with('error', 'Access denied.');
+        }
+
+        return view('course/create');
+    }
+
+    /**
+     * Store new course
+     */
+    public function store()
+    {
+        // Check if user is logged in and is teacher or admin
+        $session = session();
+        if (!$session->get('isLoggedIn')) {
+            return redirect()->to('/login')->with('error', 'You must be logged in to access this page.');
+        }
+
+        $userRole = $session->get('userRole');
+        if ($userRole !== 'admin' && $userRole !== 'teacher') {
+            return redirect()->to('/dashboard')->with('error', 'Access denied.');
+        }
+
+        // Get user ID
+        $userModel = new \App\Models\UserModel();
+        $user = $userModel->where('email', $session->get('userEmail'))->first();
+        if (!$user) {
+            return redirect()->to('/dashboard')->with('error', 'User not found.');
+        }
+
+        $title = trim((string) $this->request->getPost('title'));
+        $description = trim((string) $this->request->getPost('description'));
+
+        if ($title === '' || $description === '') {
+            return redirect()->back()->withInput()->with('error', 'All fields are required.');
+        }
+
+        $data = [
+            'title' => $title,
+            'description' => $description,
+            'instructor_id' => $user['id']
+        ];
+
+        if ($this->courseModel->insert($data)) {
+            return redirect()->to('/dashboard')->with('success', 'Course created successfully!');
+        } else {
+            return redirect()->back()->withInput()->with('error', 'Failed to create course.');
+        }
+    }
+
+    /**
+     * Display edit course form
+     */
+    public function edit($course_id = null)
+    {
+        // Check if user is logged in and is teacher or admin
+        $session = session();
+        if (!$session->get('isLoggedIn')) {
+            return redirect()->to('/login')->with('error', 'You must be logged in to access this page.');
+        }
+
+        $userRole = $session->get('userRole');
+        if ($userRole !== 'admin' && $userRole !== 'teacher') {
+            return redirect()->to('/dashboard')->with('error', 'Access denied.');
+        }
+
+        // Validate course_id
+        if (!$course_id || !is_numeric($course_id)) {
+            return redirect()->to('/dashboard')->with('error', 'Invalid course ID.');
+        }
+
+        // Get course
+        $course = $this->courseModel->find($course_id);
+        if (!$course) {
+            return redirect()->to('/dashboard')->with('error', 'Course not found.');
+        }
+
+        // Check if user is the instructor or admin
+        $userModel = new \App\Models\UserModel();
+        $user = $userModel->where('email', $session->get('userEmail'))->first();
+        if (!$user) {
+            return redirect()->to('/dashboard')->with('error', 'User not found.');
+        }
+
+        if ($userRole !== 'admin' && $course['instructor_id'] !== $user['id']) {
+            return redirect()->to('/dashboard')->with('error', 'Access denied.');
+        }
+
+        return view('course/edit', ['course' => $course]);
+    }
+
+    /**
+     * Update course
+     */
+    public function update($course_id = null)
+    {
+        // Check if user is logged in and is teacher or admin
+        $session = session();
+        if (!$session->get('isLoggedIn')) {
+            return redirect()->to('/login')->with('error', 'You must be logged in to access this page.');
+        }
+
+        $userRole = $session->get('userRole');
+        if ($userRole !== 'admin' && $userRole !== 'teacher') {
+            return redirect()->to('/dashboard')->with('error', 'Access denied.');
+        }
+
+        // Validate course_id
+        if (!$course_id || !is_numeric($course_id)) {
+            return redirect()->to('/dashboard')->with('error', 'Invalid course ID.');
+        }
+
+        // Get course
+        $course = $this->courseModel->find($course_id);
+        if (!$course) {
+            return redirect()->to('/dashboard')->with('error', 'Course not found.');
+        }
+
+        // Check if user is the instructor or admin
+        $userModel = new \App\Models\UserModel();
+        $user = $userModel->where('email', $session->get('userEmail'))->first();
+        if (!$user) {
+            return redirect()->to('/dashboard')->with('error', 'User not found.');
+        }
+
+        if ($userRole !== 'admin' && $course['instructor_id'] !== $user['id']) {
+            return redirect()->to('/dashboard')->with('error', 'Access denied.');
+        }
+
+        $title = trim((string) $this->request->getPost('title'));
+        $description = trim((string) $this->request->getPost('description'));
+
+        if ($title === '' || $description === '') {
+            return redirect()->back()->withInput()->with('error', 'All fields are required.');
+        }
+
+        $data = [
+            'title' => $title,
+            'description' => $description
+        ];
+
+        if ($this->courseModel->update($course_id, $data)) {
+            return redirect()->to('/dashboard')->with('success', 'Course updated successfully!');
+        } else {
+            return redirect()->back()->withInput()->with('error', 'Failed to update course.');
+        }
+    }
+
+    /**
+     * Delete course
+     */
+    public function delete($course_id = null)
+    {
+        // Check if user is logged in and is teacher or admin
+        $session = session();
+        if (!$session->get('isLoggedIn')) {
+            return redirect()->to('/login')->with('error', 'You must be logged in to access this page.');
+        }
+
+        $userRole = $session->get('userRole');
+        if ($userRole !== 'admin' && $userRole !== 'teacher') {
+            return redirect()->to('/dashboard')->with('error', 'Access denied.');
+        }
+
+        // Validate course_id
+        if (!$course_id || !is_numeric($course_id)) {
+            return redirect()->to('/dashboard')->with('error', 'Invalid course ID.');
+        }
+
+        // Get course
+        $course = $this->courseModel->find($course_id);
+        if (!$course) {
+            return redirect()->to('/dashboard')->with('error', 'Course not found.');
+        }
+
+        // Check if user is the instructor or admin
+        $userModel = new \App\Models\UserModel();
+        $user = $userModel->where('email', $session->get('userEmail'))->first();
+        if (!$user) {
+            return redirect()->to('/dashboard')->with('error', 'User not found.');
+        }
+
+        if ($userRole !== 'admin' && $course['instructor_id'] !== $user['id']) {
+            return redirect()->to('/dashboard')->with('error', 'Access denied.');
+        }
+
+        if ($this->courseModel->delete($course_id)) {
+            return redirect()->to('/dashboard')->with('success', 'Course deleted successfully!');
+        } else {
+            return redirect()->back()->with('error', 'Failed to delete course.');
+        }
+    }
+
+    /**
      * Handle the AJAX request for course enrollment
      */
     public function enroll()
