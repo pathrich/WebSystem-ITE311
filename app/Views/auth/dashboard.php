@@ -497,9 +497,14 @@ $(document).ready(function() {
                     // Update course counts
                     const enrolledCount = parseInt($('.col-md-4:first h3').text()) + 1;
                     $('.col-md-4:first h3').text(enrolledCount);
-                    
+
                     const availableCount = parseInt($('.col-md-4:nth-child(2) h3').text()) - 1;
                     $('.col-md-4:nth-child(2) h3').text(availableCount);
+
+                    // Refresh notifications after enrollment
+                    if (typeof window.fetchNotifications === 'function') {
+                        window.fetchNotifications();
+                    }
                     
                 } else {
                     // Show error message

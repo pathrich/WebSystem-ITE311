@@ -55,4 +55,21 @@ abstract class BaseController extends Controller
 
         // E.g.: $this->session = service('session');
     }
+
+    /**
+     * Prepare data for views, including notifications for logged-in users
+     */
+    protected function prepareViewData($data = [])
+    {
+        $session = session();
+        if ($session->get('isLoggedIn')) {
+            $userModel = new \App\Models\UserModel();
+            $user = $userModel->where('email', $session->get('userEmail'))->first();
+            if ($user) {
+                $notificationModel = new \App\Models\NotificationModel();
+                $data['unreadNotificationsCount'] = $notificationModel->getUnreadCount($user['id']);
+            }
+        }
+        return $data;
+    }
 }
