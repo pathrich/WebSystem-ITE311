@@ -89,7 +89,7 @@ class Notifications extends BaseController
             return $this->response->setJSON(['error' => 'User not found'], ResponseInterface::HTTP_NOT_FOUND);
         }
 
-        $notifications = $this->notificationModel->getAllNotificationsForUser($user['id']);
+        $notifications = $this->notificationModel->getNotificationsForUser($user['id']);
 
         return $this->response->setJSON([
             'notifications' => $notifications

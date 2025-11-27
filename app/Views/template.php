@@ -177,7 +177,7 @@
       // Function to fetch and update notifications
       window.fetchNotifications = function() {
         $.ajax({
-          url: '<?= site_url('notifications') ?>',
+          url: '<?= base_url('notifications') ?>',
           method: 'GET',
           dataType: 'json',
           success: function(data) {
@@ -234,7 +234,7 @@
         var $item = $(this);
 
         $.ajax({
-          url: '<?= site_url('notifications/mark_read') ?>/' + notificationId,
+          url: '<?= base_url('notifications/mark_read') ?>/' + notificationId,
           method: 'POST',
           dataType: 'json',
           success: function(data) {
@@ -259,7 +259,7 @@
         var $item = $btn.closest('li').find('.dropdown-item');
 
         $.ajax({
-          url: '<?= site_url('notifications/mark_read') ?>/' + notificationId,
+          url: '<?= base_url('notifications/mark_read') ?>/' + notificationId,
           method: 'POST',
           dataType: 'json',
           success: function(data) {
@@ -280,7 +280,7 @@
       // Handle View All modal
       $('#notificationsModal').on('show.bs.modal', function() {
         $.ajax({
-          url: '<?= site_url('notifications/all') ?>',
+          url: '<?= base_url('notifications/all') ?>',
           method: 'GET',
           dataType: 'json',
           success: function(data) {
@@ -318,7 +318,7 @@
         var $item = $btn.closest('.notification-item');
 
         $.ajax({
-          url: '<?= site_url('notifications/mark_read') ?>/' + notificationId,
+          url: '<?= base_url('notifications/mark_read') ?>/' + notificationId,
           method: 'POST',
           dataType: 'json',
           success: function(data) {

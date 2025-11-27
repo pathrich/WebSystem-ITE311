@@ -388,18 +388,18 @@
                 <div class="card-body">
                     <?php if (!empty($availableCourses)): ?>
                         <?php foreach ($availableCourses as $course): ?>
-                            <div class="card mb-3 course-item" id="course-<?= $course['id'] ?>">
+                            <div class="card mb-3 course-item" id="course-<?php echo $course['id'] ?>">
                                 <div class="card-body">
-                                    <h6 class="card-title text-success"><?= esc($course['title']) ?></h6>
-                                    <p class="card-text text-muted small"><?= esc($course['description']) ?></p>
+                                    <h6 class="card-title text-success"><?php echo esc($course['title']) ?></h6>
+                                    <p class="card-text text-muted small"><?php echo esc($course['description']) ?></p>
                                     <div class="d-flex justify-content-between align-items-center">
                                         <small class="text-muted">
                                             <i class="fas fa-user me-1"></i>
-                                            Instructor: <?= esc($course['instructor_name']) ?>
+                                            Instructor: <?php echo esc($course['instructor_name']) ?>
                                         </small>
-                                            <button class="btn btn-success btn-sm enroll-btn" 
-                                                data-course-id="<?= $course['id'] ?>"
-                                                data-course-title="<?= esc($course['title']) ?>">
+                                            <button class="btn btn-success btn-sm enroll-btn"
+                                                data-course-id="<?php echo $course['id'] ?>"
+                                                data-course-title="<?php echo esc($course['title']) ?>">
                                             <i class="fas fa-plus me-1"></i>Enroll
                                         </button>
                                     </div>
@@ -426,90 +426,26 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 $(document).ready(function() {
-    // Client-side filtering for Available Courses
-    $('#availableSearchInput').on('keyup', function() {
-        var q = $(this).val().toLowerCase();
-        $('.course-item').each(function() {
-            var text = $(this).text().toLowerCase();
-            $(this).toggle(text.indexOf(q) > -1);
-        });
-    });
-
-    // Server-side AJAX search (debounced) for Available Courses
-    var debounceTimerAvailable = null;
-    var currentAvailableXhr = null;
-    function performAvailableServerSearch(keyword) {
-        // Cancel any existing request
-        if (currentAvailableXhr && typeof currentAvailableXhr.abort === 'function') {
-            currentAvailableXhr.abort();
-        }
-
-        // Show loading state on the search button
-        $('#availableServerSearchBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
-        currentAvailableXhr = $.ajax({
-            url: '<?= site_url('courses/search') ?>',
-            method: 'GET',
-            data: { keyword: keyword, availableOnly: 1 },
-            dataType: 'json',
-            success: function(data) {
-                var html = '';
-                if (!data || data.length === 0) {
-                    html = '<div class="text-center text-muted py-4"><i class="fas fa-info-circle fa-3x mb-3"></i><p>No available courses match your search.</p></div>';
-                } else {
-                    data.forEach(function(c) {
-                        html += '<div class="card mb-3 course-item" id="course-' + c.id + '">';
-                        html += '<div class="card-body">';
-                        html += '<h6 class="card-title text-success">' + $('<div/>').text(c.title).html() + '</h6>';
-                        html += '<p class="card-text text-muted small">' + $('<div/>').text(c.description || '').html() + '</p>';
-                        html += '<div class="d-flex justify-content-between align-items-center">';
-                        html += '<small class="text-muted"><i class="fas fa-user me-1"></i>' + $('<div/>').text(c.instructor_name || '').html() + '</small>';
-                        html += '<button class="btn btn-success btn-sm enroll-btn" data-course-id="' + c.id + '" data-course-title="' + $('<div/>').text(c.title).html() + '"><i class="fas fa-plus me-1"></i>Enroll</button>';
-                        html += '</div></div></div>';
-                    });
-                }
-                $('#availableCoursesList').html(html);
-                // Reset loading state
-                $('#availableServerSearchBtn').prop('disabled', false).html('Search');
-            },
-            error: function() {
-                // If the request was aborted, do not replace content and do not show error
-                if (currentAvailableXhr && currentAvailableXhr.statusText === 'abort') {
-                    // nothing
-                } else {
-                    $('#availableCoursesList').html('<div class="text-center text-danger py-4"><p>Error searching courses.</p></div>');
-                }
-                $('#availableServerSearchBtn').prop('disabled', false).html('Search');
-            }
-        });
-    }
-
-    $('#availableSearchInput').on('keyup', function() {
-        var keyword = $(this).val();
-        if (debounceTimerAvailable) clearTimeout(debounceTimerAvailable);
-        debounceTimerAvailable = setTimeout(function() { performAvailableServerSearch(keyword); }, 450);
-    });
-    $('#availableServerSearchBtn').on('click', function() { performAvailableServerSearch($('#availableSearchInput').val()); });
-
-    // Delegated listener for Enroll buttons (dynamic elements supported)
-    $(document).on('click', '.enroll-btn', function(e) {
+    // Listen for a click on the Enroll button
+    $('.enroll-btn').on('click', function(e) {
         // Prevent the default form submission behavior
         e.preventDefault();
-        
+
         const button = $(this);
         const courseId = button.data('course-id');
         const courseTitle = button.data('course-title');
         const courseCard = button.closest('.card');
-        
+
         // Disable button and show loading state
         button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Enrolling...');
-        
+
         // Use $.post() to send the course_id to the /course/enroll URL
         $.ajax({
-            url: '<?= base_url('course/enroll') ?>',
+            url: '<?php echo base_url('course/enroll') ?>',
             type: 'POST',
             data: {
                 course_id: courseId,
-                <?= csrf_token() ?>: '<?= csrf_hash() ?>'
+                <?php echo csrf_token() ?>: '<?php echo csrf_hash() ?>'
             },
             dataType: 'json',
             success: function(response) {
@@ -524,12 +460,12 @@ $(document).ready(function() {
                         </div>
                     `;
                     $('body').prepend(alertHtml);
-                    
+
                     // Auto-hide alert after 5 seconds
                     setTimeout(function() {
                         $('.alert').fadeOut();
                     }, 5000);
-                    
+
                     // Updates the Enrolled Courses list dynamically without reloading the page
                     const enrolledHtml = `
                         <div class="card mb-3 border-start border-primary border-3">
@@ -549,19 +485,19 @@ $(document).ready(function() {
                             </div>
                         </div>
                     `;
-                    
+
                     // Remove empty state if exists and add new enrollment
                     const enrolledList = $('.col-lg-6:first .card-body');
                     if (enrolledList.find('.text-center').length) {
                         enrolledList.html('');
                     }
                     enrolledList.prepend(enrolledHtml);
-                    
+
                     // Hides or disables the Enroll button for that course
                     courseCard.fadeOut(300, function() {
                         $(this).remove();
                     });
-                    
+
                     // Update course counts
                     const enrolledCount = parseInt($('.col-md-4:first h3').text()) + 1;
                     $('.col-md-4:first h3').text(enrolledCount);
@@ -573,7 +509,7 @@ $(document).ready(function() {
                     if (typeof window.fetchNotifications === 'function') {
                         window.fetchNotifications();
                     }
-                    
+
                 } else {
                     // Show error message
                     const alertHtml = `
@@ -584,7 +520,7 @@ $(document).ready(function() {
                         </div>
                     `;
                     $('body').prepend(alertHtml);
-                    
+
                     // Re-enable button
                     button.prop('disabled', false).html('<i class="fas fa-plus me-1"></i>Enroll');
                 }
@@ -599,13 +535,157 @@ $(document).ready(function() {
                     </div>
                 `;
                 $('body').prepend(alertHtml);
-                
+
                 // Re-enable button
                 button.prop('disabled', false).html('<i class="fas fa-plus me-1"></i>Enroll');
             }
         });
     });
+
+    // Debounce function for search
+    let searchTimeout;
+    function debounceSearch(callback, delay = 300) {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(callback, delay);
+    }
+
+    // Function to perform search
+    function performSearch() {
+        const keyword = $('#availableSearchInput').val().trim();
+        const button = $('#availableServerSearchBtn');
+        const originalText = button.html();
+
+        // Disable button and show loading state
+        button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Searching...');
+
+        // Make AJAX request to search courses
+        $.ajax({
+            url: '<?php echo base_url('courses/search') ?>',
+            type: 'GET',
+            data: {
+                keyword: keyword,
+                availableOnly: true
+            },
+            dataType: 'json',
+            success: function(response) {
+                // Update the available courses list
+                const coursesContainer = $('.col-lg-6.mb-4 .card-body');
+                let html = '';
+
+                if (response && response.length > 0) {
+                    response.forEach(function(course) {
+                        html += `
+                            <div class="card mb-3 course-item" id="course-${course.id}">
+                                <div class="card-body">
+                                    <h6 class="card-title text-success">${course.title}</h6>
+                                    <p class="card-text text-muted small">${course.description}</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <i class="fas fa-user me-1"></i>
+                                            Instructor: ${course.instructor_name}
+                                        </small>
+                                        <button class="btn btn-success btn-sm enroll-btn"
+                                            data-course-id="${course.id}"
+                                            data-course-title="${course.title}">
+                                            <i class="fas fa-plus me-1"></i>Enroll
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else if (keyword.length > 0) {
+                    html = `
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-search fa-3x mb-3"></i>
+                            <p>No courses found matching "${keyword}".</p>
+                            <p class="small">Try a different search term.</p>
+                        </div>
+                    `;
+                } else {
+                    // If no keyword, show all available courses
+                    <?php if (!empty($availableCourses)): ?>
+                        <?php foreach ($availableCourses as $course): ?>
+                            html += `
+                                <div class="card mb-3 course-item" id="course-<?php echo $course['id'] ?>">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-success"><?php echo esc($course['title']) ?></h6>
+                                        <p class="card-text text-muted small"><?php echo esc($course['description']) ?></p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">
+                                                <i class="fas fa-user me-1"></i>
+                                                Instructor: <?php echo esc($course['instructor_name']) ?>
+                                            </small>
+                                            <button class="btn btn-success btn-sm enroll-btn"
+                                                data-course-id="<?php echo $course['id'] ?>"
+                                                data-course-title="<?php echo esc($course['title']) ?>">
+                                                <i class="fas fa-plus me-1"></i>Enroll
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        html = `
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-check-circle fa-3x mb-3"></i>
+                                <p>You're enrolled in all available courses!</p>
+                                <p class="small">Great job staying on top of your learning.</p>
+                            </div>
+                        `;
+                    <?php endif; ?>
+                }
+
+                coursesContainer.html(html);
+
+                // Update course count
+                const count = response && keyword.length > 0 ? response.length : <?php echo count($availableCourses ?? []) ?>;
+                $('.col-md-4:nth-child(2) h3').text(count);
+
+                // Re-enable button
+                button.prop('disabled', false).html(originalText);
+            },
+            error: function(xhr, status, error) {
+                // Show error message
+                const alertHtml = `
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        An error occurred while searching. Please try again.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+                $('body').prepend(alertHtml);
+
+                // Re-enable button
+                button.prop('disabled', false).html(originalText);
+            }
+        });
+    }
+
+    // Handle real-time search with debouncing
+    $('#availableSearchInput').on('input', function() {
+        debounceSearch(function() {
+            performSearch();
+        });
+    });
+
+    // Handle search button click
+    $('#availableServerSearchBtn').on('click', function(e) {
+        e.preventDefault();
+        performSearch();
+    });
+
+    // Handle Enter key in search input
+    $('#availableSearchInput').on('keypress', function(e) {
+        if (e.which === 13) { // Enter key
+            e.preventDefault();
+            performSearch();
+        }
+    });
 });
 </script>
-<?= $this->endSection() ?>
+<?php echo $this->endSection() ?>
+
+
 

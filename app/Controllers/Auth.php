@@ -203,6 +203,9 @@ class Auth extends BaseController
                 ];
             }
 
+            // Load notifications count for logged-in users
+            $data = $this->prepareViewData($data);
+
             return view('auth/dashboard', $data);
         } catch (Exception $e) {
             // If there's any error, show a simple error message
