@@ -17,6 +17,46 @@ class Course extends BaseController
     }
 
     /**
+     * Search for courses via GET 'keyword'.
+     * If AJAX: return JSON list of matched courses.
+     * If not AJAX: return the index view with all courses.
+     */
+    public function search()
+    {
+        $keyword = $this->request->getGet('keyword');
+        $keyword = is_null($keyword) ? '' : trim((string) $keyword);
+        $availableOnly = (bool) $this->request->getGet('availableOnly');
+
+        $session = session();
+        $userId = $session->get('userId');
+        $userEmail = $session->get('userEmail');
+        if (!$userId && $userEmail) {
+            // derive userId from email if not set in session
+            $userModel = new \App\Models\UserModel();
+            $user = $userModel->where('email', $userEmail)->first();
+            if ($user) {
+                $userId = $user['id'];
+            }
+        }
+        $userRole = strtolower((string)$session->get('userRole'));
+
+        // Use model to search courses; if availableOnly is set and student, restrict to un-enrolled courses for that user
+        if ($availableOnly && $userId && $userRole === 'student') {
+            $matched = $this->courseModel->searchAvailableCoursesForUser($keyword, $userId);
+        } else {
+            $matched = $this->courseModel->searchCourses($keyword);
+        }
+
+        if ($this->request->isAJAX()) {
+            return $this->response->setJSON($matched);
+        }
+
+        // Non-AJAX: show index page with all courses
+        $courses = $this->courseModel->getAvailableCourses();
+        return view('courses/index', ['courses' => $courses]);
+    }
+
+    /**
      * Display create course form
      */
     public function create()
