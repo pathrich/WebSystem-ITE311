@@ -25,6 +25,10 @@ $routes->post('/register', 'Auth::store');
 
 // Course Management
 $routes->post('/course/enroll', 'Course::enroll');
+// Course search (AJAX and regular)
+$routes->get('courses/search', 'Course::search');
+// List all courses (non-AJAX view)
+$routes->get('courses', 'Course::search');
 
 // Materials Management
 $routes->get('/materials/upload/(:num)', 'Materials::upload/$1');

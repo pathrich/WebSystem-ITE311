@@ -37,7 +37,7 @@
     <div class="row g-3 mb-4">
         <div class="col-md-4">
             <div class="card border-0 shadow-sm">
-                <div class="card-body">
+                <div class="card-body" id="availableCoursesList">
                     <h6 class="text-muted">Total Users</h6>
                     <h3 class="mb-0"><?= esc($stats['admin']['users'] ?? 0) ?></h3>
                 </div>
@@ -378,13 +378,17 @@
         <!-- Display Available Courses section -->
         <div class="col-lg-6 mb-4">
             <div class="card border-0 shadow-sm">
-                <div class="card-header bg-success text-white">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Available Courses</h5>
+                    <div class="input-group w-50 ms-3">
+                        <input type="text" id="availableSearchInput" class="form-control form-control-sm" placeholder="Search available courses..." aria-label="Search available courses">
+                        <button class="btn btn-outline-light btn-sm" id="availableServerSearchBtn" type="button">Search</button>
+                    </div>
                 </div>
                 <div class="card-body">
                     <?php if (!empty($availableCourses)): ?>
                         <?php foreach ($availableCourses as $course): ?>
-                            <div class="card mb-3" id="course-<?= $course['id'] ?>">
+                            <div class="card mb-3 course-item" id="course-<?= $course['id'] ?>">
                                 <div class="card-body">
                                     <h6 class="card-title text-success"><?= esc($course['title']) ?></h6>
                                     <p class="card-text text-muted small"><?= esc($course['description']) ?></p>
@@ -393,7 +397,7 @@
                                             <i class="fas fa-user me-1"></i>
                                             Instructor: <?= esc($course['instructor_name']) ?>
                                         </small>
-                                        <button class="btn btn-success btn-sm enroll-btn" 
+                                            <button class="btn btn-success btn-sm enroll-btn" 
                                                 data-course-id="<?= $course['id'] ?>"
                                                 data-course-title="<?= esc($course['title']) ?>">
                                             <i class="fas fa-plus me-1"></i>Enroll
@@ -422,8 +426,56 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 $(document).ready(function() {
-    // Listen for a click on the Enroll button
-    $('.enroll-btn').on('click', function(e) {
+    // Client-side filtering for Available Courses
+    $('#availableSearchInput').on('keyup', function() {
+        var q = $(this).val().toLowerCase();
+        $('.course-item').each(function() {
+            var text = $(this).text().toLowerCase();
+            $(this).toggle(text.indexOf(q) > -1);
+        });
+    });
+
+    // Server-side AJAX search (debounced) for Available Courses
+    var debounceTimerAvailable = null;
+    function performAvailableServerSearch(keyword) {
+        $.ajax({
+            url: '<?= site_url('courses/search') ?>',
+            method: 'GET',
+            data: { keyword: keyword, availableOnly: 1 },
+            dataType: 'json',
+            success: function(data) {
+                var html = '';
+                if (!data || data.length === 0) {
+                    html = '<div class="text-center text-muted py-4"><i class="fas fa-info-circle fa-3x mb-3"></i><p>No available courses match your search.</p></div>';
+                } else {
+                    data.forEach(function(c) {
+                        html += '<div class="card mb-3 course-item" id="course-' + c.id + '">';
+                        html += '<div class="card-body">';
+                        html += '<h6 class="card-title text-success">' + $('<div/>').text(c.title).html() + '</h6>';
+                        html += '<p class="card-text text-muted small">' + $('<div/>').text(c.description || '').html() + '</p>';
+                        html += '<div class="d-flex justify-content-between align-items-center">';
+                        html += '<small class="text-muted"><i class="fas fa-user me-1"></i>' + $('<div/>').text(c.instructor_name || '').html() + '</small>';
+                        html += '<button class="btn btn-success btn-sm enroll-btn" data-course-id="' + c.id + '" data-course-title="' + $('<div/>').text(c.title).html() + '"><i class="fas fa-plus me-1"></i>Enroll</button>';
+                        html += '</div></div></div>';
+                    });
+                }
+                $('#availableCoursesList').html(html);
+            },
+            error: function() {
+                $('#availableCoursesList').html('<div class="text-center text-danger py-4"><p>Error searching courses.</p></div>');
+            }
+        });
+    }
+
+    $('#availableSearchInput').on('keyup', function() {
+        var keyword = $(this).val();
+        if (debounceTimerAvailable) clearTimeout(debounceTimerAvailable);
+        debounceTimerAvailable = setTimeout(function() { performAvailableServerSearch(keyword); }, 300);
+    });
+    $('#availableServerSearchBtn').on('click', function() { performAvailableServerSearch($('#availableSearchInput').val()); });
+
+    // Delegated listener for Enroll buttons (dynamic elements supported)
+    $(document).on('click', '.enroll-btn', function(e) {
         // Prevent the default form submission behavior
         e.preventDefault();
         
