@@ -65,9 +65,15 @@
             <h5 class="mb-0">Admin Tools</h5>
         </div>
         <div class="card-body">
+            <div class="d-flex gap-2 mb-3">
+                <a href="<?= base_url('users') ?>" class="btn btn-primary">
+                    <i class="fas fa-users me-2"></i>Manage Users
+                </a>
+                <a href="<?= base_url('courses') ?>" class="btn btn-outline-secondary">
+                    <i class="fas fa-book me-2"></i>Manage Courses
+                </a>
+            </div>
             <ul class="mb-0">
-                <li>Manage Users</li>
-                <li>Manage Courses</li>
                 <li>View System Reports</li>
             </ul>
         </div>

@@ -40,3 +40,17 @@ $routes->get('/materials/download/(:num)', 'Materials::download/$1');
 $routes->get('/notifications', 'Notifications::get');
 $routes->post('/notifications/mark_read/(:num)', 'Notifications::mark_as_read/$1');
 $routes->get('/notifications/all', 'Notifications::get_all');
+
+// User Management (Admin Only)
+$routes->group('users', function($routes) {
+    $routes->get('/', 'UserController::index');
+    $routes->get('create', 'UserController::create');
+    $routes->post('store', 'UserController::store');
+    $routes->get('edit/(:num)', 'UserController::edit/$1');
+    $routes->post('update/(:num)', 'UserController::update/$1');
+    $routes->get('delete/(:num)', 'UserController::delete/$1');
+    $routes->get('toggle-status/(:num)', 'UserController::toggleStatus/$1');
+    $routes->post('update-role/(:num)', 'UserController::updateRole/$1');
+    $routes->get('activity-logs', 'UserController::activityLogs');
+    $routes->get('activity-logs/(:num)', 'UserController::activityLogs/$1');
+});

@@ -28,6 +28,7 @@ class Auth extends BaseController
             $session = session();
             $session->set([
                 'isLoggedIn' => true,
+                'userId' => $user['id'],
                 'userEmail' => $email,
                 'userName' => $user['name'] ?? '',
                 'userRole' => $user['role'] ?? 'student',
@@ -111,6 +112,12 @@ class Auth extends BaseController
             $userModel = new \App\Models\UserModel();
             $user = $userModel->where('email', $session->get('userEmail'))->first();
 
+            // Debug: Check if user exists and has correct ID
+            if (!$user) {
+                log_message('error', 'Dashboard: User not found for email: ' . $session->get('userEmail'));
+                return redirect()->to(base_url('login'))->with('error', 'User session invalid. Please login again.');
+            }
+
             $data = [
                 'userName'  => $user['name'] ?? $session->get('userEmail'),
                 'userEmail' => $user['email'] ?? $session->get('userEmail'),
@@ -129,8 +136,14 @@ class Auth extends BaseController
                 $courseModel = new \App\Models\CourseModel();
                 $materialModel = new \App\Models\MaterialModel();
 
+                // Debug: Log user ID and check enrollments
+                log_message('debug', 'Dashboard: Loading enrollments for user ID: ' . $user['id']);
+
                 $data['enrollments'] = $enrollmentModel->getUserEnrollments($user['id']);
                 $data['availableCourses'] = $courseModel->getAvailableCoursesForUser($user['id']);
+
+                // Debug: Log enrollment count
+                log_message('debug', 'Dashboard: Found ' . count($data['enrollments']) . ' enrollments for user ID: ' . $user['id']);
 
                 // Load materials for enrolled courses
                 $data['courseMaterials'] = [];
