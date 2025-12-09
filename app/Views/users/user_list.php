@@ -84,11 +84,11 @@
                                         <a href="<?= base_url('users/edit/' . $user['id']) ?>" class="btn btn-sm btn-outline-primary" title="Edit User">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <button class="btn btn-sm btn-outline-<?= $user['status'] === 'active' ? 'warning' : 'success' ?> toggle-status-btn"
+                                        <button class="btn btn-sm btn-<?= $user['status'] === 'active' ? 'warning' : 'success' ?> toggle-status-btn"
                                                 data-user-id="<?= $user['id'] ?>"
                                                 data-current-status="<?= $user['status'] ?>"
                                                 title="<?= $user['status'] === 'active' ? 'Deactivate' : 'Activate' ?> User">
-                                            <i class="fas fa-<?= $user['status'] === 'active' ? 'ban' : 'check' ?>"></i>
+                                            <?= $user['status'] === 'active' ? 'Inactive' : 'Active' ?>
                                         </button>
                                         <a href="<?= base_url('users/activity-logs/' . $user['id']) ?>" class="btn btn-sm btn-outline-info" title="View Activity Logs">
                                             <i class="fas fa-history"></i>

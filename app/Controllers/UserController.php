@@ -38,9 +38,9 @@ class UserController extends BaseController
 
         $perPage = 10;
         $currentPage = $this->request->getGet('page') ?? 1;
-        $offset = ($currentPage - 1) * $perPage;
 
-        $users = $this->userModel->findAll($perPage, $offset);
+        // Use proper pagination - findAll() doesn't take pagination parameters in CI4
+        $users = $this->userModel->orderBy('id', 'DESC')->findAll($perPage, ($currentPage - 1) * $perPage);
         $total = $this->userModel->countAll();
 
         $pager = \Config\Services::pager();
@@ -82,7 +82,8 @@ class UserController extends BaseController
             'email' => 'required|valid_email|is_unique[users.email]',
             'password' => 'required|min_length[6]',
             'password_confirm' => 'required|matches[password]',
-            'role' => 'required|in_list[admin,manager,staff,student]',
+            'role' => 'required|in_list[admin,teacher,student]',
+            'status' => 'required|in_list[active,inactive]',
         ];
 
         if (!$this->validate($rules)) {
@@ -95,7 +96,7 @@ class UserController extends BaseController
             'email' => $this->request->getPost('email'),
             'password' => $this->request->getPost('password'),
             'role' => $this->request->getPost('role'),
-            'status' => 'active',
+            'status' => $this->request->getPost('status'),
         ];
 
         $userId = $this->userModel->insert($userData);
@@ -182,7 +183,8 @@ class UserController extends BaseController
             $updateData['password'] = $this->request->getPost('password');
         }
 
-        if ($this->userModel->update($id, $updateData)) {
+        $result = $this->userModel->update($id, $updateData);
+        if ($result !== false) {
             // Log activity
             $session = session();
             $changes = [];
@@ -290,7 +292,7 @@ class UserController extends BaseController
         }
 
         $newRole = $this->request->getPost('role');
-        if (!$newRole || !in_array($newRole, ['admin', 'manager', 'staff', 'student'])) {
+        if (!$newRole || !in_array($newRole, ['admin', 'teacher', 'student'])) {
             return redirect()->to(base_url('users'))->with('error', 'Invalid role selected.');
         }
 

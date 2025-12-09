@@ -24,7 +24,9 @@ class Auth extends BaseController
         // Try database user first
         $userModel = new \App\Models\UserModel();
         $user = $userModel->where('email', $email)->first();
-        if ($user && password_verify($password, $user['password'])) {
+
+        // Check if user exists and is active
+        if ($user && $user['status'] === 'active' && password_verify($password, $user['password'])) {
             $session = session();
             $session->set([
                 'isLoggedIn' => true,
@@ -34,6 +36,11 @@ class Auth extends BaseController
                 'userRole' => $user['role'] ?? 'student',
             ]);
             return redirect()->to(base_url('dashboard'));
+        }
+
+        // Provide specific error message for deactivated accounts
+        if ($user && $user['status'] === 'inactive') {
+            return redirect()->back()->with('login_error', 'Your account has been deactivated. Please contact an administrator.');
         }
 
         return redirect()->back()->with('login_error', 'Invalid credentials');
@@ -115,7 +122,14 @@ class Auth extends BaseController
             // Debug: Check if user exists and has correct ID
             if (!$user) {
                 log_message('error', 'Dashboard: User not found for email: ' . $session->get('userEmail'));
+                $session->destroy();
                 return redirect()->to(base_url('login'))->with('error', 'User session invalid. Please login again.');
+            }
+
+            // Check if user account is still active
+            if ($user['status'] !== 'active') {
+                $session->destroy();
+                return redirect()->to(base_url('login'))->with('login_error', 'Your account has been deactivated. Please contact an administrator.');
             }
 
             $data = [

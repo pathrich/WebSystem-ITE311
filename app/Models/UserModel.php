@@ -24,7 +24,7 @@ class UserModel extends Model
 
     protected $useTimestamps = false; // timestamps handled by DB defaults in migration
 
-    // Validation rules
+    // Validation rules (used for updates, controller handles inserts)
     protected $validationRules = [
         'name' => 'required|min_length[2]|max_length[100]',
         'username' => 'required|min_length[3]|max_length[50]|is_unique[users.username,id,{id}]',
@@ -122,6 +122,17 @@ class UserModel extends Model
     public function updateRole($userId, $role)
     {
         return $this->update($userId, ['role' => $role]);
+    }
+
+    /**
+     * Override update method to skip validation for updates
+     */
+    public function update($id = null, $data = null): bool
+    {
+        $this->skipValidation(true);
+        $result = parent::update($id, $data);
+        $this->skipValidation(false);
+        return $result;
     }
 
     /**
