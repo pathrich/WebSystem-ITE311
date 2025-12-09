@@ -48,7 +48,7 @@ $routes->group('users', function($routes) {
     $routes->post('store', 'UserController::store');
     $routes->get('edit/(:num)', 'UserController::edit/$1');
     $routes->post('update/(:num)', 'UserController::update/$1');
-    $routes->get('delete/(:num)', 'UserController::delete/$1');
+    $routes->post('delete/(:num)', 'UserController::delete/$1');
     $routes->get('toggle-status/(:num)', 'UserController::toggleStatus/$1');
     $routes->post('update-role/(:num)', 'UserController::updateRole/$1');
     $routes->get('activity-logs', 'UserController::activityLogs');

@@ -93,12 +93,12 @@
                                         <a href="<?= base_url('users/activity-logs/' . $user['id']) ?>" class="btn btn-sm btn-outline-info" title="View Activity Logs">
                                             <i class="fas fa-history"></i>
                                         </a>
-                                        <button class="btn btn-sm btn-outline-danger delete-user-btn"
-                                                data-user-id="<?= $user['id'] ?>"
-                                                data-user-name="<?= esc($user['name']) ?>"
-                                                title="Delete User">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
+                                        <form method="post" action="<?= base_url('users/delete/' . $user['id']) ?>" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete user \"<?= esc($user['name']) ?>\"? This action cannot be undone.');">
+                                            <?= csrf_field() ?>
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete User">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
                                     </div>
                                 </td>
                             </tr>
@@ -127,24 +127,7 @@
     </div>
 </div>
 
-<!-- Delete Confirmation Modal -->
-<div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="deleteUserModalLabel">Confirm Delete</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                Are you sure you want to delete user "<span id="deleteUserName"></span>"? This action cannot be undone.
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <a href="#" id="confirmDeleteBtn" class="btn btn-danger">Delete User</a>
-            </div>
-        </div>
-    </div>
-</div>
+
 
 <!-- Status Toggle Modal -->
 <div class="modal fade" id="toggleStatusModal" tabindex="-1" aria-labelledby="toggleStatusModalLabel" aria-hidden="true">
@@ -167,18 +150,6 @@
 
 <script>
 $(document).ready(function() {
-    // Delete user functionality
-    $('.delete-user-btn').on('click', function() {
-        const userId = $(this).data('user-id');
-        const userName = $(this).data('user-name');
-
-        $('#deleteUserName').text(userName);
-        $('#confirmDeleteBtn').attr('href', '<?= base_url('users/delete/') ?>' + userId);
-
-        const modal = new bootstrap.Modal(document.getElementById('deleteUserModal'));
-        modal.show();
-    });
-
     // Toggle status functionality
     $('.toggle-status-btn').on('click', function() {
         const userId = $(this).data('user-id');
