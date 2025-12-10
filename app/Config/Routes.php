@@ -48,7 +48,9 @@ $routes->group('users', function($routes) {
     $routes->post('store', 'UserController::store');
     $routes->get('edit/(:num)', 'UserController::edit/$1');
     $routes->post('update/(:num)', 'UserController::update/$1');
-    $routes->post('delete/(:num)', 'UserController::delete/$1');
+    // Allow both GET and POST for delete to support form POSTs and direct links
+    $routes->match(['get', 'post'], 'delete/(:num)', 'UserController::delete/$1');
+    $routes->match(['get', 'post'], 'restore/(:num)', 'UserController::restoreUser/$1');
     $routes->get('toggle-status/(:num)', 'UserController::toggleStatus/$1');
     $routes->post('update-role/(:num)', 'UserController::updateRole/$1');
     $routes->get('activity-logs', 'UserController::activityLogs');

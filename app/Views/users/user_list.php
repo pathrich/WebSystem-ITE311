@@ -81,24 +81,29 @@
                                 <td><?= date('M d, Y', strtotime($user['created_at'])) ?></td>
                                 <td>
                                     <div class="btn-group" role="group">
-                                        <a href="<?= base_url('users/edit/' . $user['id']) ?>" class="btn btn-sm btn-outline-primary" title="Edit User">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <button class="btn btn-sm btn-<?= $user['status'] === 'active' ? 'warning' : 'success' ?> toggle-status-btn"
-                                                data-user-id="<?= $user['id'] ?>"
-                                                data-current-status="<?= $user['status'] ?>"
-                                                title="<?= $user['status'] === 'active' ? 'Deactivate' : 'Activate' ?> User">
-                                            <?= $user['status'] === 'active' ? 'Inactive' : 'Active' ?>
-                                        </button>
-                                        <a href="<?= base_url('users/activity-logs/' . $user['id']) ?>" class="btn btn-sm btn-outline-info" title="View Activity Logs">
-                                            <i class="fas fa-history"></i>
-                                        </a>
-                                        <form method="post" action="<?= base_url('users/delete/' . $user['id']) ?>" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete user \"<?= esc($user['name']) ?>\"? This action cannot be undone.');">
-                                            <?= csrf_field() ?>
-                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete User">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </form>
+                                        <?php if ($user['role'] !== 'admin'): ?>
+                                            <?php if (empty($user['deleted_at'])): ?>
+                                                <a href="<?= base_url('users/edit/' . $user['id']) ?>" class="btn btn-sm btn-outline-primary" title="Edit User">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <a href="<?= base_url('users/activity-logs/' . $user['id']) ?>" class="btn btn-sm btn-outline-info" title="View Activity Logs">
+                                                    <i class="fas fa-history"></i>
+                                                </a>
+                                                <form method="post" action="<?= base_url('users/delete/' . $user['id']) ?>" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete user \"<?= esc($user['name']) ?>\"? This action cannot be undone.');">
+                                                    <?= csrf_field() ?>
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete User">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            <?php else: ?>
+                                                <form method="post" action="<?= base_url('users/restore/' . $user['id']) ?>" style="display: inline;">
+                                                    <?= csrf_field() ?>
+                                                    <button type="submit" class="btn btn-sm btn-outline-success" title="Restore User">
+                                                        <i class="fas fa-undo"></i> Restore
+                                                    </button>
+                                                </form>
+                                            <?php endif; ?>
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                             </tr>

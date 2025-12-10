@@ -20,9 +20,14 @@ class UserModel extends Model
         'status',
         'created_at',
         'updated_at',
+        'deleted_at',
     ];
 
-    protected $useTimestamps = false; // timestamps handled by DB defaults in migration
+    protected $useTimestamps = true;
+    protected $createdField  = 'created_at';
+    protected $updatedField  = 'updated_at';
+    protected $useSoftDeletes = true;
+    protected $deletedField  = 'deleted_at';
 
     // Validation rules (used for updates, controller handles inserts)
     protected $validationRules = [

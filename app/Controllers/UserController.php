@@ -39,9 +39,9 @@ class UserController extends BaseController
         $perPage = 10;
         $currentPage = $this->request->getGet('page') ?? 1;
 
-        // Use proper pagination - findAll() doesn't take pagination parameters in CI4
-        $users = $this->userModel->orderBy('id', 'DESC')->findAll($perPage, ($currentPage - 1) * $perPage);
-        $total = $this->userModel->countAll();
+        // Include soft-deleted users so they can be restored from the list
+        $users = $this->userModel->withDeleted()->orderBy('id', 'DESC')->findAll($perPage, ($currentPage - 1) * $perPage);
+        $total = $this->userModel->withDeleted()->countAllResults();
 
         $pager = \Config\Services::pager();
         $pager->setPath('users');
@@ -97,6 +97,7 @@ class UserController extends BaseController
             'password' => $this->request->getPost('password'),
             'role' => $this->request->getPost('role'),
             'status' => $this->request->getPost('status'),
+            'created_at' => date('Y-m-d H:i:s'),
         ];
 
         $userId = $this->userModel->insert($userData);
@@ -178,9 +179,14 @@ class UserController extends BaseController
             'status' => $this->request->getPost('status'),
         ];
 
-        // Only update password if provided
+        // Only update password if provided, and prevent reuse of old password
         if ($this->request->getPost('password')) {
-            $updateData['password'] = $this->request->getPost('password');
+            $newPassword = $this->request->getPost('password');
+            // Check if new password matches old password
+            if (password_verify($newPassword, $user['password'])) {
+                return redirect()->back()->withInput()->with('error', 'You cannot reuse your previous password. Please create a new one.');
+            }
+            $updateData['password'] = $newPassword;
         }
 
         $result = $this->userModel->update($id, $updateData);
@@ -207,7 +213,8 @@ class UserController extends BaseController
                 ]);
             }
 
-            return redirect()->to(base_url('users'))->with('success', 'User updated successfully.');
+            $session->destroy();
+            return redirect()->to('/login');
         }
 
         return redirect()->back()->withInput()->with('error', 'Failed to update user.');
@@ -216,6 +223,7 @@ class UserController extends BaseController
     /**
      * Delete user
      */
+    // Soft delete: mark as deleted, do not remove from DB
     public function delete($id)
     {
         $redirect = $this->checkAdminAccess();
@@ -227,21 +235,95 @@ class UserController extends BaseController
         }
 
         if ($this->userModel->delete($id)) {
+            return redirect()->to(base_url('users'))->with('success', 'User marked as deleted.');
+        }
+        return redirect()->to(base_url('users'))->with('error', 'Failed to delete user.');
+    }
+
+    // Restore soft-deleted user
+    public function restore($id)
+    {
+        $redirect = $this->checkAdminAccess();
+        if ($redirect) return $redirect;
+
+        $user = $this->userModel->withDeleted()->find($id);
+        if (!$user) {
+            return redirect()->to(base_url('users'))->with('error', 'User not found.');
+        }
+
+        if ($this->userModel->update($id, ['deleted_at' => null])) {
+            return redirect()->to(base_url('users'))->with('success', 'User restored successfully.');
+        }
+        return redirect()->to(base_url('users'))->with('error', 'Failed to restore user.');
+    }
+
+    /**
+     * Soft-delete user (set deleted_at)
+     */
+    public function deleteUser($id)
+    {
+        $redirect = $this->checkAdminAccess();
+        if ($redirect) return $redirect;
+
+        $user = $this->userModel->withDeleted()->find($id);
+        if (!$user) {
+            return redirect()->to(base_url('users'))->with('error', 'User not found.');
+        }
+
+        // Use model delete() which will perform a soft delete because useSoftDeletes = true
+        if ($this->userModel->delete($id)) {
             // Log activity
             $session = session();
             $this->activityLogModel->insert([
                 'user_id' => $session->get('userId') ?? 1,
                 'action' => 'delete',
-                'description' => "Deleted user: {$user['name']} ({$user['username']})",
+                'description' => "Soft-deleted user: {$user['name']} ({$user['username']})",
                 'ip_address' => $this->request->getIPAddress(),
                 'user_agent' => $this->request->getUserAgent(),
                 'created_at' => date('Y-m-d H:i:s')
             ]);
 
-            return redirect()->to(base_url('users'))->with('success', 'User deleted successfully.');
+            return redirect()->to(base_url('users'))->with('success', 'User deleted (soft) successfully.');
         }
 
         return redirect()->to(base_url('users'))->with('error', 'Failed to delete user.');
+    }
+
+    /**
+     * Restore a soft-deleted user (set deleted_at to NULL)
+     */
+    public function restoreUser($id)
+    {
+        $redirect = $this->checkAdminAccess();
+        if ($redirect) return $redirect;
+
+        // Include deleted records when fetching
+        $user = $this->userModel->withDeleted()->find($id);
+        if (!$user) {
+            return redirect()->to(base_url('users'))->with('error', 'User not found.');
+        }
+
+        $data = [
+            'deleted_at' => null,
+            'status' => 'active',
+        ];
+
+        if ($this->userModel->update($id, $data) !== false) {
+            // Log activity
+            $session = session();
+            $this->activityLogModel->insert([
+                'user_id' => $session->get('userId') ?? 1,
+                'action' => 'restore',
+                'description' => "Restored user: {$user['name']} ({$user['username']})",
+                'ip_address' => $this->request->getIPAddress(),
+                'user_agent' => $this->request->getUserAgent(),
+                'created_at' => date('Y-m-d H:i:s')
+            ]);
+
+            return redirect()->to(base_url('users'))->with('success', 'User restored successfully.');
+        }
+
+        return redirect()->to(base_url('users'))->with('error', 'Failed to restore user.');
     }
 
     /**

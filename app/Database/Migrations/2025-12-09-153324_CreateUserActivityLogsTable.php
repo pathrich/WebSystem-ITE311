@@ -43,7 +43,8 @@ class CreateUserActivityLogsTable extends Migration
         $this->forge->addKey('id', true);
         $this->forge->addKey('user_id');
         $this->forge->addKey('action');
-        $this->forge->createTable('user_activity_logs');
+        // Create table only if it does not already exist
+        $this->forge->createTable('user_activity_logs', true);
     }
 
     public function down()
