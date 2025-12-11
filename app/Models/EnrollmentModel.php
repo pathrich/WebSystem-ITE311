@@ -12,7 +12,8 @@ class EnrollmentModel extends Model
     protected $allowedFields = [
         'user_id',
         'course_id',
-        'enrolled_at'
+        'enrollment_date',
+        'status'
     ];
 
     protected $useTimestamps = false;
@@ -22,7 +23,24 @@ class EnrollmentModel extends Model
      */
     public function enrollUser($data)
     {
-        $data['enrolled_at'] = date('Y-m-d H:i:s');
+        // Use enrollment_date if not set
+        if (!isset($data['enrollment_date'])) {
+            $data['enrollment_date'] = date('Y-m-d H:i:s');
+        }
+        
+        // Check if enrolled_at column exists in the database
+        $db = \Config\Database::connect();
+        $fields = $db->getFieldData('enrollments');
+        $fieldNames = array_column($fields, 'name');
+        
+        // Only include enrolled_at if the column exists
+        if (!in_array('enrolled_at', $fieldNames)) {
+            unset($data['enrolled_at']);
+        } elseif (!isset($data['enrolled_at'])) {
+            // Only set enrolled_at if column exists and value not provided
+            $data['enrolled_at'] = $data['enrollment_date'];
+        }
+        
         return $this->insert($data);
     }
 
@@ -31,12 +49,20 @@ class EnrollmentModel extends Model
      */
     public function getUserEnrollments($user_id)
     {
-        return $this->select('enrollments.*, courses.title, courses.description, users.name as instructor_name')
+        $results = $this->select('enrollments.*, courses.title, courses.description, users.name as instructor_name')
             ->join('courses', 'courses.id = enrollments.course_id')
             ->join('users', 'users.id = courses.instructor_id')
             ->where('enrollments.user_id', $user_id)
-            ->orderBy('enrollments.enrolled_at', 'DESC')
             ->findAll();
+        
+        // Sort by enrollment_date or enrolled_at in PHP
+        usort($results, function($a, $b) {
+            $dateA = $a['enrollment_date'] ?? $a['enrolled_at'] ?? '';
+            $dateB = $b['enrollment_date'] ?? $b['enrolled_at'] ?? '';
+            return strtotime($dateB) - strtotime($dateA);
+        });
+        
+        return $results;
     }
 
     /**
@@ -47,5 +73,83 @@ class EnrollmentModel extends Model
         return $this->where('user_id', $user_id)
             ->where('course_id', $course_id)
             ->first() !== null;
+    }
+
+    /**
+     * Get pending enrollments for a teacher's courses
+     */
+    public function getPendingEnrollmentsForTeacher($teacher_id)
+    {
+        return $this->select('enrollments.*, courses.title as course_title, courses.course_number, users.name as student_name, users.email as student_email, users.id as student_id')
+            ->join('courses', 'courses.id = enrollments.course_id')
+            ->join('users', 'users.id = enrollments.user_id')
+            ->where('courses.instructor_id', $teacher_id)
+            ->where('enrollments.status', 'pending')
+            ->orderBy('enrollments.enrollment_date', 'DESC')
+            ->findAll();
+    }
+
+    /**
+     * Get approved enrollments for a user
+     */
+    public function getApprovedEnrollments($user_id)
+    {
+        $db = \Config\Database::connect();
+        $builder = $db->table('enrollments');
+        
+        $results = $builder->select('enrollments.*, courses.title, courses.description, users.name as instructor_name')
+            ->join('courses', 'courses.id = enrollments.course_id')
+            ->join('users', 'users.id = courses.instructor_id')
+            ->where('enrollments.user_id', $user_id)
+            ->where('enrollments.status', 'approved')
+            ->get()
+            ->getResultArray();
+        
+        // Sort by enrollment_date or enrolled_at in PHP
+        usort($results, function($a, $b) {
+            $dateA = $a['enrollment_date'] ?? $a['enrolled_at'] ?? '';
+            $dateB = $b['enrollment_date'] ?? $b['enrolled_at'] ?? '';
+            return strtotime($dateB) - strtotime($dateA);
+        });
+        
+        return $results;
+    }
+
+    /**
+     * Get pending enrollments for a user
+     */
+    public function getPendingEnrollments($user_id)
+    {
+        $db = \Config\Database::connect();
+        $builder = $db->table('enrollments');
+        
+        $results = $builder->select('enrollments.*, courses.title, courses.description, users.name as instructor_name')
+            ->join('courses', 'courses.id = enrollments.course_id')
+            ->join('users', 'users.id = courses.instructor_id')
+            ->where('enrollments.user_id', $user_id)
+            ->where('enrollments.status', 'pending')
+            ->get()
+            ->getResultArray();
+        
+        // Sort by enrollment_date or enrolled_at in PHP
+        usort($results, function($a, $b) {
+            $dateA = $a['enrollment_date'] ?? $a['enrolled_at'] ?? '';
+            $dateB = $b['enrollment_date'] ?? $b['enrolled_at'] ?? '';
+            return strtotime($dateB) - strtotime($dateA);
+        });
+        
+        return $results;
+    }
+
+    /**
+     * Update enrollment status
+     */
+    public function updateStatus($enrollment_id, $status)
+    {
+        $allowedStatuses = ['pending', 'approved', 'rejected'];
+        if (!in_array($status, $allowedStatuses)) {
+            return false;
+        }
+        return $this->update($enrollment_id, ['status' => $status]);
     }
 }

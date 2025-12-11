@@ -193,6 +193,7 @@ class UserController extends BaseController
         if ($result !== false) {
             // Log activity
             $session = session();
+            $currentUserId = $session->get('userId');
             $changes = [];
             foreach ($updateData as $field => $value) {
                 if ($field !== 'password' && $user[$field] !== $value) {
@@ -204,7 +205,7 @@ class UserController extends BaseController
 
             if (!empty($changes)) {
                 $this->activityLogModel->insert([
-                    'user_id' => $session->get('userId') ?? 1,
+                    'user_id' => $currentUserId ?? 1,
                     'action' => 'update',
                     'description' => "Updated user {$user['name']} ({$user['username']}): " . implode(', ', $changes),
                     'ip_address' => $this->request->getIPAddress(),
@@ -213,8 +214,14 @@ class UserController extends BaseController
                 ]);
             }
 
-            $session->destroy();
-            return redirect()->to('/login');
+            // Only logout if user is updating their own account
+            if ($currentUserId == $id) {
+                $session->destroy();
+                return redirect()->to('/login')->with('success', 'Your account has been updated. Please login again.');
+            }
+
+            // If admin is updating another user, redirect back to users list
+            return redirect()->to(base_url('users'))->with('success', 'User updated successfully.');
         }
 
         return redirect()->back()->withInput()->with('error', 'Failed to update user.');

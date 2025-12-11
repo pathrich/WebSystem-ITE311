@@ -11,8 +11,13 @@ class CourseModel extends Model
     protected $returnType = 'array';
     protected $allowedFields = [
         'title',
+        'course_number',
         'description',
+        'units',
         'instructor_id',
+        'academic_year_id',
+        'semester_id',
+        'term_id',
         'created_at',
         'updated_at'
     ];
@@ -24,17 +29,26 @@ class CourseModel extends Model
      */
     public function getAvailableCourses()
     {
-        return $this->select('courses.*, users.name as instructor_name')
+        $courses = $this->select('courses.*, users.name as instructor_name')
             ->join('users', 'users.id = courses.instructor_id')
             ->orderBy('courses.created_at', 'DESC')
             ->findAll();
+        
+        // Add schedules to each course
+        $scheduleModel = new \App\Models\ScheduleModel();
+        foreach ($courses as &$course) {
+            $course['schedules'] = $scheduleModel->getSchedulesByCourse($course['id']);
+        }
+
+        return $courses;
     }
 
     /**
-     * Get courses not enrolled by a specific user
+     * Get courses not enrolled by a specific user (excluding pending enrollments)
      */
     public function getAvailableCoursesForUser($user_id)
     {
+        // Get all enrollments (pending, approved, rejected) to exclude from available courses
         $enrolledCourses = $this->db->table('enrollments')
             ->select('course_id')
             ->where('user_id', $user_id)
@@ -51,7 +65,15 @@ class CourseModel extends Model
             $query->whereNotIn('courses.id', $enrolledIds);
         }
 
-        return $query->findAll();
+        $courses = $query->findAll();
+        
+        // Add schedules to each course
+        $scheduleModel = new \App\Models\ScheduleModel();
+        foreach ($courses as &$course) {
+            $course['schedules'] = $scheduleModel->getSchedulesByCourse($course['id']);
+        }
+
+        return $courses;
     }
 
     /**
@@ -116,6 +138,14 @@ class CourseModel extends Model
 
         $builder->orderBy('courses.created_at', 'DESC');
 
-        return $builder->findAll();
+        $courses = $builder->findAll();
+        
+        // Add schedules to each course
+        $scheduleModel = new \App\Models\ScheduleModel();
+        foreach ($courses as &$course) {
+            $course['schedules'] = $scheduleModel->getSchedulesByCourse($course['id']);
+        }
+
+        return $courses;
     }
 }

@@ -35,9 +35,9 @@
                             <div class="mb-3">
                                 <label for="material_file" class="form-label">Select Material File</label>
                                 <input type="file" class="form-control" id="material_file" name="material_file" required
-                                       accept=".pdf,.ppt,.pptx,.doc,.docx">
+                                       accept=".pdf,.ppt,.pptx">
                                 <div class="form-text">
-                                    Allowed file types: PDF, PPT, PPTX, DOC, DOCX. Maximum size: 10MB.
+                                    Allowed file types: PDF and PPT only. Maximum size: 10MB.
                                 </div>
                             </div>
                             <button type="submit" class="btn btn-primary">Upload Material</button>

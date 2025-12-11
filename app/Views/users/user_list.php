@@ -69,9 +69,27 @@
                                 <td><?= esc($user['username']) ?></td>
                                 <td><?= esc($user['email']) ?></td>
                                 <td>
-                                    <span class="badge bg-<?= $user['role'] === 'admin' ? 'danger' : ($user['role'] === 'manager' ? 'warning' : ($user['role'] === 'staff' ? 'info' : 'success')) ?>">
-                                        <?= ucfirst(esc($user['role'])) ?>
-                                    </span>
+                                    <?php if (!empty($user['role'])): ?>
+                                        <?php
+                                        $roleBadgeClass = 'success'; // default
+                                        if ($user['role'] === 'admin') {
+                                            $roleBadgeClass = 'danger';
+                                        } elseif ($user['role'] === 'teacher') {
+                                            $roleBadgeClass = 'info';
+                                        } elseif ($user['role'] === 'student') {
+                                            $roleBadgeClass = 'success';
+                                        } elseif ($user['role'] === 'manager') {
+                                            $roleBadgeClass = 'warning';
+                                        } elseif ($user['role'] === 'staff') {
+                                            $roleBadgeClass = 'primary';
+                                        }
+                                        ?>
+                                        <span class="badge bg-<?= $roleBadgeClass ?>">
+                                            <?= ucfirst(esc($user['role'])) ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="badge bg-secondary">No Role</span>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <span class="badge bg-<?= $user['status'] === 'active' ? 'success' : 'secondary' ?>">

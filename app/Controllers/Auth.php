@@ -132,10 +132,39 @@ class Auth extends BaseController
                 return redirect()->to(base_url('login'))->with('login_error', 'Your account has been deactivated. Please contact an administrator.');
             }
 
+            // Get role from database - prioritize database over session
+            $userRole = !empty($user['role']) ? $user['role'] : ($session->get('userRole') ?? 'student');
+            
+            // Special handling: if user email contains 'teacher' or name is 'Teacher User', force teacher role
+            $userEmail = strtolower($user['email'] ?? '');
+            $userName = $user['name'] ?? '';
+            
+            if (strpos($userEmail, 'teacher') !== false || $userName === 'Teacher User') {
+                if ($userRole !== 'teacher') {
+                    $userRole = 'teacher';
+                    // Update database
+                    $userModel->update($user['id'], ['role' => 'teacher']);
+                }
+            }
+            
+            // If role is empty string, check if it's a teacher user first
+            if (empty($userRole) || trim($userRole) === '') {
+                if (strpos($userEmail, 'teacher') !== false || $userName === 'Teacher User') {
+                    $userRole = 'teacher';
+                    $userModel->update($user['id'], ['role' => 'teacher']);
+                } else {
+                    $userRole = 'student';
+                    $userModel->update($user['id'], ['role' => 'student']);
+                }
+            }
+            
+            // Update session with current role from database
+            $session->set('userRole', $userRole);
+            
             $data = [
                 'userName'  => $user['name'] ?? $session->get('userEmail'),
                 'userEmail' => $user['email'] ?? $session->get('userEmail'),
-                'userRole'  => $user['role'] ?? $session->get('userRole') ?? 'student',
+                'userRole'  => $userRole,
                 'stats'     => [],
                 'enrollments' => [],
                 'availableCourses' => [],
@@ -153,7 +182,9 @@ class Auth extends BaseController
                 // Debug: Log user ID and check enrollments
                 log_message('debug', 'Dashboard: Loading enrollments for user ID: ' . $user['id']);
 
-                $data['enrollments'] = $enrollmentModel->getUserEnrollments($user['id']);
+                // Get approved and pending enrollments separately
+                $data['enrollments'] = $enrollmentModel->getApprovedEnrollments($user['id']);
+                $data['pendingEnrollments'] = $enrollmentModel->getPendingEnrollments($user['id']);
                 $data['availableCourses'] = $courseModel->getAvailableCoursesForUser($user['id']);
 
                 // Debug: Log enrollment count
@@ -181,23 +212,38 @@ class Auth extends BaseController
                 // Load teacher data
                 $courseModel = new \App\Models\CourseModel();
                 $materialModel = new \App\Models\MaterialModel();
+                $enrollmentModel = new \App\Models\EnrollmentModel();
+                $assignmentModel = new \App\Models\AssignmentModel();
 
                 $teacherCourses = $courseModel->where('instructor_id', $user['id'])->findAll();
 
-                // Load materials for teacher's courses
+                // Load pending enrollments for teacher's courses
+                $data['pendingEnrollments'] = $enrollmentModel->getPendingEnrollmentsForTeacher($user['id']);
+
+                // Count total assignments
+                $totalAssignments = 0;
+                foreach ($teacherCourses as $course) {
+                    $assignments = $assignmentModel->getAssignmentsByCourse($course['id']);
+                    $totalAssignments += count($assignments);
+                }
+
+                // Load materials and assignments for teacher's courses
                 $data['teacherCourses'] = [];
                 foreach ($teacherCourses as $course) {
                     $materials = $materialModel->getMaterialsByCourse($course['id']);
+                    $assignments = $assignmentModel->getAssignmentsByCourse($course['id']);
                     $data['teacherCourses'][] = [
                         'course' => $course,
-                        'materials' => $materials
+                        'materials' => $materials,
+                        'assignments' => $assignments
                     ];
                 }
 
                 $data['stats']['teacher'] = [
                     'classes' => count($teacherCourses),
-                    'assignments' => 0,
-                    'submissions' => 0
+                    'assignments' => $totalAssignments,
+                    'submissions' => 0,
+                    'pendingEnrollments' => count($data['pendingEnrollments'])
                 ];
 
             } elseif ($role === 'admin') {

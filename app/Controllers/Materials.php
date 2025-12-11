@@ -72,10 +72,11 @@ class Materials extends BaseController
             return redirect()->back()->with('error', 'Invalid file upload.');
         }
 
-        // Check file type
-        $allowedTypes = ['pdf', 'ppt', 'pptx', 'doc', 'docx'];
-        if (!in_array($file->getExtension(), $allowedTypes)) {
-            return redirect()->back()->with('error', 'Invalid file type. Only PDF, PPT, DOC, DOCX files are allowed.');
+        // Check file type - Only PDF and PPT files allowed
+        $allowedTypes = ['pdf', 'ppt', 'pptx'];
+        $fileExtension = strtolower($file->getExtension());
+        if (!in_array($fileExtension, $allowedTypes)) {
+            return redirect()->back()->with('error', 'Invalid file type. Only PDF and PPT files are allowed.');
         }
 
         // Check file size (max 10MB)
