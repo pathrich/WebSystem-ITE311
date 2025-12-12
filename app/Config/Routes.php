@@ -29,10 +29,9 @@ $routes->post('/course/approve-enrollment', 'Course::approveEnrollment');
 $routes->post('/course/reject-enrollment', 'Course::rejectEnrollment');
 $routes->get('/course/create', 'Course::create');
 $routes->post('/course/store', 'Course::store');
-// Course search (AJAX and regular)
-$routes->get('courses/search', 'Course::search');
-// List all courses (non-AJAX view)
-$routes->get('courses', 'Course::search');
+// Course search routes (per instruction)
+$routes->get('/courses/search', 'Course::search');
+$routes->post('/courses/search', 'Course::search');
 
 // Materials Management
 $routes->get('/materials/upload/(:num)', 'Materials::upload/$1');

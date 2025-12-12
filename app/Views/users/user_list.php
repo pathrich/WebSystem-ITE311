@@ -35,13 +35,19 @@
 
 <!-- Users Table -->
 <div class="card border-0 shadow-sm">
-    <div class="card-header bg-dark text-white">
+    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Users (<?= $pager->getTotal() ?>)</h5>
+        <div class="w-50">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                <input type="text" id="userSearchInput" class="form-control" placeholder="Search users by name, username, email, or role...">
+            </div>
+        </div>
     </div>
     <div class="card-body">
         <?php if (!empty($users)): ?>
             <div class="table-responsive">
-                <table class="table table-hover">
+                <table class="table table-hover" id="usersTable">
                     <thead class="table-light">
                         <tr>
                             <th>ID</th>
@@ -56,7 +62,7 @@
                     </thead>
                     <tbody>
                         <?php foreach ($users as $user): ?>
-                            <tr>
+                            <tr class="user-row">
                                 <td><?= esc($user['id']) ?></td>
                                 <td>
                                     <div class="d-flex align-items-center">
@@ -102,15 +108,15 @@
                                         <?php if ($user['role'] !== 'admin'): ?>
                                             <?php if (empty($user['deleted_at'])): ?>
                                                 <a href="<?= base_url('users/edit/' . $user['id']) ?>" class="btn btn-sm btn-outline-primary" title="Edit User">
-                                                    <i class="fas fa-edit"></i>
+                                                    <i class="fas fa-edit"></i> Edit
                                                 </a>
                                                 <a href="<?= base_url('users/activity-logs/' . $user['id']) ?>" class="btn btn-sm btn-outline-info" title="View Activity Logs">
-                                                    <i class="fas fa-history"></i>
+                                                    <i class="fas fa-history"></i> Logs
                                                 </a>
                                                 <form method="post" action="<?= base_url('users/delete/' . $user['id']) ?>" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete user \"<?= esc($user['name']) ?>\"? This action cannot be undone.');">
                                                     <?= csrf_field() ?>
                                                     <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete User">
-                                                        <i class="fas fa-trash"></i>
+                                                        <i class="fas fa-trash"></i> Delete
                                                     </button>
                                                 </form>
                                             <?php else: ?>
@@ -172,22 +178,48 @@
 </div>
 
 <script>
-$(document).ready(function() {
-    // Toggle status functionality
-    $('.toggle-status-btn').on('click', function() {
-        const userId = $(this).data('user-id');
-        const currentStatus = $(this).data('current-status');
-        const userName = $(this).closest('tr').find('td:nth-child(2)').text().trim();
+document.addEventListener('DOMContentLoaded', function () {
+    // Client-side search/filter for users (instant on first letter)
+    var searchInput = document.getElementById('userSearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('keyup', function () {
+            var value = this.value.toLowerCase();
+            var rows = document.querySelectorAll('#usersTable .user-row');
+            rows.forEach(function (row) {
+                var text = row.textContent.toLowerCase();
+                row.style.display = text.indexOf(value) > -1 ? '' : 'none';
+            });
+        });
+    }
 
-        const action = currentStatus === 'active' ? 'deactivate' : 'activate';
-        const actionText = currentStatus === 'active' ? 'deactivate' : 'activate';
+    // Toggle status functionality (without jQuery)
+    var toggleButtons = document.querySelectorAll('.toggle-status-btn');
+    toggleButtons.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var userId = this.getAttribute('data-user-id');
+            var currentStatus = this.getAttribute('data-current-status');
+            var userRow = this.closest('tr');
+            var nameCell = userRow ? userRow.querySelector('td:nth-child(2)') : null;
+            var userName = nameCell ? nameCell.textContent.trim() : '';
 
-        $('#statusAction').text(actionText);
-        $('#statusUserName').text(userName);
-        $('#confirmStatusBtn').attr('href', '<?= base_url('users/toggle-status/') ?>' + userId);
+            var actionText = currentStatus === 'active' ? 'deactivate' : 'activate';
 
-        const modal = new bootstrap.Modal(document.getElementById('toggleStatusModal'));
-        modal.show();
+            var statusActionEl = document.getElementById('statusAction');
+            var statusUserNameEl = document.getElementById('statusUserName');
+            var confirmBtn = document.getElementById('confirmStatusBtn');
+
+            if (statusActionEl) statusActionEl.textContent = actionText;
+            if (statusUserNameEl) statusUserNameEl.textContent = userName;
+            if (confirmBtn) {
+                confirmBtn.setAttribute('href', '<?= base_url('users/toggle-status/') ?>' + userId);
+            }
+
+            var modalEl = document.getElementById('toggleStatusModal');
+            if (modalEl && window.bootstrap && typeof bootstrap.Modal === 'function') {
+                var modal = new bootstrap.Modal(modalEl);
+                modal.show();
+            }
+        });
     });
 });
 </script>

@@ -8,7 +8,7 @@ class UserSeeder extends Seeder
 {
     public function run()
     {
-        $data = [
+        $users = [
             [
                 'name'       => 'Admin User',
                 'email'      => 'admin@example.com',
@@ -35,7 +35,13 @@ class UserSeeder extends Seeder
             ],
         ];
 
-        // Insert multiple records
-        $this->db->table('users')->insertBatch($data);
+        $table = $this->db->table('users');
+
+        foreach ($users as $user) {
+            $exists = $table->where('email', $user['email'])->get()->getRow();
+            if (! $exists) {
+                $table->insert($user);
+            }
+        }
     }
 }

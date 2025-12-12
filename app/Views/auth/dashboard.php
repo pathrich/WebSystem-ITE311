@@ -60,6 +60,7 @@
             </div>
         </div>
     </div>
+
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-dark text-white">
             <h5 class="mb-0">Admin Tools</h5>
@@ -90,13 +91,17 @@
     
     <!-- Course Management for Admin -->
     <div class="card border-0 shadow-sm">
-        <div class="card-header bg-dark text-white">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Course Management</h5>
+            <div class="input-group input-group-sm" style="max-width: 320px;">
+                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                <input type="text" id="adminCourseSearchInput" class="form-control" placeholder="Search courses...">
+            </div>
         </div>
-        <div class="card-body">
+        <div class="card-body" id="adminCoursesWrapper">
             <?php if (!empty($adminCourses)): ?>
                 <?php foreach ($adminCourses as $courseData): ?>
-                    <div class="card mb-3">
+                    <div class="card mb-3 admin-course-item">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h6 class="mb-0"><?= esc($courseData['course']['title']) ?></h6>
                             <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#uploadCollapseAdmin<?= $courseData['course']['id'] ?>" aria-expanded="false" aria-controls="uploadCollapseAdmin<?= $courseData['course']['id'] ?>">
@@ -111,7 +116,7 @@
                                     <div class="mb-3">
                                         <label for="material_file_admin<?= $courseData['course']['id'] ?>" class="form-label">Select Material File</label>
                                         <input type="file" class="form-control" id="material_file_admin<?= $courseData['course']['id'] ?>" name="material_file" required
-                                               accept=".pdf,.ppt,.pptx">
+                                               accept=".pdf,.ppt">
                                         <div class="form-text">
                                             Allowed file types: PDF and PPT only. Maximum size: 10MB.
                                         </div>
@@ -167,6 +172,41 @@
             <?php endif; ?>
         </div>
     </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var searchInput = document.getElementById('adminCourseSearchInput');
+        var wrapper = document.getElementById('adminCoursesWrapper');
+        if (!searchInput || !wrapper) return;
+
+        var noResultEl = document.createElement('div');
+        noResultEl.className = 'text-center text-muted py-4';
+        noResultEl.style.display = 'none';
+        noResultEl.innerHTML = '<i class="fas fa-search fa-2x mb-2"></i><p class="mb-0">No courses found.</p>';
+        wrapper.appendChild(noResultEl);
+
+        function applyFilter() {
+            var value = (searchInput.value || '').toLowerCase();
+            var cards = wrapper.querySelectorAll('.admin-course-item');
+            var anyVisible = false;
+
+            cards.forEach(function (card) {
+                var text = (card.textContent || '').toLowerCase();
+                var isMatch = text.indexOf(value) > -1;
+                card.style.display = isMatch ? '' : 'none';
+                if (isMatch) anyVisible = true;
+            });
+
+            if (value && !anyVisible) {
+                noResultEl.style.display = '';
+            } else {
+                noResultEl.style.display = 'none';
+            }
+        }
+
+        searchInput.addEventListener('keyup', applyFilter);
+    });
+    </script>
 
 <?php elseif ($role === 'teacher'): ?>
     <div class="row g-3 mb-4">
@@ -244,8 +284,14 @@
                     <i class="fas fa-exclamation-triangle me-2"></i>
                     <strong>Action Required:</strong> You have <?= count($pendingEnrollments) ?> pending enrollment request(s) waiting for your approval.
                 </div>
+                <div class="d-flex justify-content-end mb-3">
+                    <div class="input-group input-group-sm" style="max-width: 320px;">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" id="pendingEnrollmentSearchInput" class="form-control" placeholder="Search pending enrollments...">
+                    </div>
+                </div>
                 <div class="table-responsive">
-                    <table class="table table-hover table-bordered">
+                    <table class="table table-hover table-bordered" id="pendingEnrollmentsTable">
                         <thead class="table-warning">
                             <tr>
                                 <th>#</th>
@@ -256,7 +302,7 @@
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="pendingEnrollmentsTbody">
                             <?php foreach ($pendingEnrollments as $index => $enrollment): ?>
                             <tr data-enrollment-id="<?= $enrollment['id'] ?>">
                                 <td><strong><?= $index + 1 ?></strong></td>
@@ -313,6 +359,40 @@
         </div>
     </div>
 
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var input = document.getElementById('pendingEnrollmentSearchInput');
+        var tbody = document.getElementById('pendingEnrollmentsTbody');
+        if (!input || !tbody) return;
+
+        var noResultRow = document.createElement('tr');
+        noResultRow.style.display = 'none';
+        noResultRow.innerHTML = '<td colspan="6" class="text-center text-muted py-3">No pending enrollments found.</td>';
+        tbody.appendChild(noResultRow);
+
+        input.addEventListener('keyup', function () {
+            var value = (this.value || '').toLowerCase();
+            var rows = tbody.querySelectorAll('tr[data-enrollment-id]');
+            var anyVisible = false;
+
+            rows.forEach(function (row) {
+                var text = (row.textContent || '').toLowerCase();
+                var isMatch = text.indexOf(value) > -1;
+                row.style.display = isMatch ? '' : 'none';
+                if (isMatch) {
+                    anyVisible = true;
+                }
+            });
+
+            if (value && !anyVisible) {
+                noResultRow.style.display = '';
+            } else {
+                noResultRow.style.display = 'none';
+            }
+        });
+    });
+    </script>
+
     <!-- Course Management for Teacher -->
     <div class="card border-0 shadow-sm">
         <div class="card-header bg-dark text-white">
@@ -320,14 +400,20 @@
                 <i class="fas fa-book me-2"></i>My Assigned Courses (<?= count($teacherCourses ?? []) ?>)
             </h5>
         </div>
-        <div class="card-body">
+        <div class="card-body" id="teacherCoursesWrapper">
             <?php if (!empty($teacherCourses)): ?>
+                <div class="d-flex justify-content-end mb-3">
+                    <div class="input-group input-group-sm" style="max-width: 320px;">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" id="teacherCourseSearchInput" class="form-control" placeholder="Search your courses...">
+                    </div>
+                </div>
                 <p class="text-muted small mb-3">
                     <i class="fas fa-info-circle me-1"></i>
                     Click the buttons on each course card to: Upload Materials, Create Assignments, Manage Assignments, or View Students
                 </p>
                 <?php foreach ($teacherCourses as $courseData): ?>
-                    <div class="card mb-3">
+                    <div class="card mb-3 teacher-dashboard-course-item">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h6 class="mb-0"><?= esc($courseData['course']['title']) ?></h6>
                             <div class="btn-group" role="group">
@@ -380,7 +466,7 @@
                                             <i class="fas fa-file me-1"></i>Select Material File <span class="text-danger">*</span>
                                         </label>
                                         <input type="file" class="form-control" id="material_file_teacher<?= $courseData['course']['id'] ?>" name="material_file" required
-                                               accept=".pdf,.ppt,.pptx">
+                                               accept=".pdf,.ppt">
                                         <div class="form-text">
                                             <i class="fas fa-info-circle me-1"></i>
                                             Allowed file types: PDF and PPT only. Maximum size: 10MB.
@@ -544,6 +630,22 @@
         </div>
     </div>
 
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var searchInput = document.getElementById('teacherCourseSearchInput');
+        if (searchInput) {
+            searchInput.addEventListener('keyup', function () {
+                var value = this.value.toLowerCase();
+                var cards = document.querySelectorAll('#teacherCoursesWrapper .teacher-dashboard-course-item');
+                cards.forEach(function (card) {
+                    var text = card.textContent.toLowerCase();
+                    card.style.display = text.indexOf(value) > -1 ? '' : 'none';
+                });
+            });
+        }
+    });
+    </script>
+
 <?php elseif ($role === 'student'): ?>
     <div class="row g-3 mb-4">
         <div class="col-md-4">
@@ -576,13 +678,17 @@
         <!-- Display Enrolled Courses section -->
         <div class="col-lg-6 mb-4">
             <div class="card border-0 shadow-sm">
-                <div class="card-header bg-primary text-white">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Enrolled Courses</h5>
+                    <div class="input-group input-group-sm" style="max-width: 320px;">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" id="enrolledCoursesSearchInput" class="form-control" placeholder="Search enrolled courses...">
+                    </div>
                 </div>
-                <div class="card-body">
+                <div class="card-body" id="enrolledCoursesWrapper">
                     <?php if (!empty($enrollments)): ?>
                         <?php foreach ($enrollments as $enrollment): ?>
-                            <div class="card mb-3 border-start border-primary border-3">
+                            <div class="card mb-3 border-start border-primary border-3 enrolled-course-item">
                                 <div class="card-body">
                                     <h6 class="card-title text-primary"><?= esc($enrollment['title']) ?></h6>
                                     <p class="card-text text-muted small"><?= esc($enrollment['description']) ?></p>
@@ -657,15 +763,19 @@
         <?php if (!empty($pendingEnrollments)): ?>
         <div class="col-lg-6 mb-4">
             <div class="card border-0 shadow-sm">
-                <div class="card-header bg-warning text-dark">
+                <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
                         <i class="bi bi-clock-history me-2"></i>
                         Pending Enrollment Requests (<?= count($pendingEnrollments) ?>)
                     </h5>
+                    <div class="input-group input-group-sm" style="max-width: 320px;">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" id="pendingRequestsSearchInput" class="form-control" placeholder="Search pending requests...">
+                    </div>
                 </div>
-                <div class="card-body">
+                <div class="card-body" id="pendingRequestsWrapper">
                     <?php foreach ($pendingEnrollments as $enrollment): ?>
-                        <div class="card mb-3 border-start border-warning border-3">
+                        <div class="card mb-3 border-start border-warning border-3 pending-request-item">
                             <div class="card-body">
                                 <h6 class="card-title text-warning"><?= esc($enrollment['title']) ?></h6>
                                 <p class="card-text text-muted small"><?= esc($enrollment['description']) ?></p>
@@ -690,6 +800,70 @@
         </div>
         <?php endif; ?>
 
+        <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Enrolled Courses filter
+            var enrolledInput = document.getElementById('enrolledCoursesSearchInput');
+            var enrolledWrapper = document.getElementById('enrolledCoursesWrapper');
+            if (enrolledInput && enrolledWrapper) {
+                var enrolledNoResult = document.createElement('div');
+                enrolledNoResult.className = 'text-center text-muted py-3';
+                enrolledNoResult.style.display = 'none';
+                enrolledNoResult.innerHTML = '<i class="fas fa-search me-1"></i>No enrolled courses found.';
+                enrolledWrapper.appendChild(enrolledNoResult);
+
+                enrolledInput.addEventListener('keyup', function () {
+                    var value = (this.value || '').toLowerCase();
+                    var items = enrolledWrapper.querySelectorAll('.enrolled-course-item');
+                    var anyVisible = false;
+
+                    items.forEach(function (item) {
+                        var text = (item.textContent || '').toLowerCase();
+                        var isMatch = text.indexOf(value) > -1;
+                        item.style.display = isMatch ? '' : 'none';
+                        if (isMatch) anyVisible = true;
+                    });
+
+                    if (value && !anyVisible) {
+                        enrolledNoResult.style.display = '';
+                    } else {
+                        enrolledNoResult.style.display = 'none';
+                    }
+                });
+            }
+
+            // Pending Enrollment Requests filter
+            var pendingInput = document.getElementById('pendingRequestsSearchInput');
+            var pendingWrapper = document.getElementById('pendingRequestsWrapper');
+            if (pendingInput && pendingWrapper) {
+                var pendingNoResult = document.createElement('div');
+                pendingNoResult.className = 'text-center text-muted py-3';
+                pendingNoResult.style.display = 'none';
+                pendingNoResult.innerHTML = '<i class="fas fa-search me-1"></i>No pending requests found.';
+                pendingWrapper.appendChild(pendingNoResult);
+
+                pendingInput.addEventListener('keyup', function () {
+                    var value = (this.value || '').toLowerCase();
+                    var items = pendingWrapper.querySelectorAll('.pending-request-item');
+                    var anyVisible = false;
+
+                    items.forEach(function (item) {
+                        var text = (item.textContent || '').toLowerCase();
+                        var isMatch = text.indexOf(value) > -1;
+                        item.style.display = isMatch ? '' : 'none';
+                        if (isMatch) anyVisible = true;
+                    });
+
+                    if (value && !anyVisible) {
+                        pendingNoResult.style.display = '';
+                    } else {
+                        pendingNoResult.style.display = 'none';
+                    }
+                });
+            }
+        });
+        </script>
+
         <!-- Display Available Courses section -->
         <div class="col-lg-6 mb-4">
             <div class="card border-0 shadow-sm">
@@ -697,7 +871,7 @@
                     <h5 class="mb-0">Available Courses</h5>
                     <div class="input-group w-50 ms-3">
                         <input type="text" id="availableSearchInput" class="form-control form-control-sm" placeholder="Search available courses..." aria-label="Search available courses">
-                        <button class="btn btn-outline-light btn-sm" id="availableServerSearchBtn" type="button">Search</button>
+                        <button class="btn btn-outline-light btn-sm" id="availableSearchButton" type="button">Search</button>
                     </div>
                 </div>
                 <div class="card-body">
@@ -742,6 +916,68 @@
             </div>
         </div>
     </div>
+
+    <script>
+    // Client-side filtering for student Available Courses (instant on first letter)
+    document.addEventListener('DOMContentLoaded', function () {
+        var searchInput = document.getElementById('availableSearchInput');
+        var searchButton = document.getElementById('availableSearchButton');
+        if (!searchInput) return;
+
+        // Button just focuses the input; no server calls
+        if (searchButton) {
+            searchButton.addEventListener('click', function () {
+                searchInput.focus();
+                // Manually trigger filtering using current value
+                applyAvailableFilter();
+            });
+        }
+
+        var coursesContainer = searchInput.closest('.card').querySelector('.card-body');
+        var noResultEl = null;
+
+        function getCards() {
+            // Re-query each time in case the list changes after enrollments
+            return coursesContainer.querySelectorAll('.course-item');
+        }
+
+        function ensureNoResultElement() {
+            if (!noResultEl) {
+                noResultEl = document.createElement('div');
+                noResultEl.className = 'text-center text-muted py-3 available-no-results';
+                noResultEl.style.display = 'none';
+                noResultEl.innerHTML = '<i class="fas fa-search me-1"></i>No available courses found for your search.';
+                coursesContainer.appendChild(noResultEl);
+            }
+        }
+
+        function applyAvailableFilter() {
+            ensureNoResultElement();
+
+            var value = searchInput.value.toLowerCase();
+            var anyVisible = false;
+            var cards = getCards();
+
+            cards.forEach(function (card) {
+                var text = card.textContent.toLowerCase();
+                var isMatch = text.indexOf(value) > -1;
+                card.style.display = isMatch ? '' : 'none';
+                if (isMatch) {
+                    anyVisible = true;
+                }
+            });
+
+            if (value && !anyVisible) {
+                noResultEl.style.display = '';
+            } else {
+                noResultEl.style.display = 'none';
+            }
+        }
+
+        // Expose function in closure
+        searchInput.addEventListener('keyup', applyAvailableFilter);
+    });
+    </script>
 
 <?php else: ?>
     <div class="alert alert-warning">Your account does not have a role assigned.</div>
@@ -877,147 +1113,7 @@ $(document).ready(function() {
         });
     });
 
-    // Debounce function for search
-    let searchTimeout;
-    function debounceSearch(callback, delay = 300) {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(callback, delay);
-    }
-
-    // Function to perform search
-    function performSearch() {
-        const keyword = $('#availableSearchInput').val().trim();
-        const button = $('#availableServerSearchBtn');
-        const originalText = button.html();
-
-        // Disable button and show loading state
-        button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Searching...');
-
-        // Make AJAX request to search courses
-        $.ajax({
-            url: '<?php echo base_url('courses/search') ?>',
-            type: 'GET',
-            data: {
-                keyword: keyword,
-                availableOnly: true
-            },
-            dataType: 'json',
-            success: function(response) {
-                // Update the available courses list
-                const coursesContainer = $('.col-lg-6.mb-4 .card-body');
-                let html = '';
-
-                if (response && response.length > 0) {
-                    response.forEach(function(course) {
-                        html += `
-                            <div class="card mb-3 course-item" id="course-${course.id}">
-                                <div class="card-body">
-                                    <h6 class="card-title text-success">${course.title}</h6>
-                                    <p class="card-text text-muted small">${course.description}</p>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <small class="text-muted">
-                                            <i class="fas fa-user me-1"></i>
-                                            Instructor: ${course.instructor_name}
-                                        </small>
-                                        <button class="btn btn-success btn-sm enroll-btn"
-                                            data-course-id="${course.id}"
-                                            data-course-title="${course.title}">
-                                            <i class="fas fa-plus me-1"></i>Enroll
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    });
-                } else if (keyword.length > 0) {
-                    html = `
-                        <div class="text-center text-muted py-4">
-                            <i class="fas fa-search fa-3x mb-3"></i>
-                            <p>No courses found matching "${keyword}".</p>
-                            <p class="small">Try a different search term.</p>
-                        </div>
-                    `;
-                } else {
-                    // If no keyword, show all available courses
-                    <?php if (!empty($availableCourses)): ?>
-                        <?php foreach ($availableCourses as $course): ?>
-                            html += `
-                                <div class="card mb-3 course-item" id="course-<?php echo $course['id'] ?>">
-                                    <div class="card-body">
-                                        <h6 class="card-title text-success"><?php echo esc($course['title']) ?></h6>
-                                        <p class="card-text text-muted small"><?php echo esc($course['description']) ?></p>
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <small class="text-muted">
-                                                <i class="fas fa-user me-1"></i>
-                                                Instructor: <?php echo esc($course['instructor_name']) ?>
-                                            </small>
-                                            <button class="btn btn-success btn-sm enroll-btn"
-                                                data-course-id="<?php echo $course['id'] ?>"
-                                                data-course-title="<?php echo esc($course['title']) ?>">
-                                                <i class="fas fa-plus me-1"></i>Enroll
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        html = `
-                            <div class="text-center text-muted py-4">
-                                <i class="fas fa-check-circle fa-3x mb-3"></i>
-                                <p>You're enrolled in all available courses!</p>
-                                <p class="small">Great job staying on top of your learning.</p>
-                            </div>
-                        `;
-                    <?php endif; ?>
-                }
-
-                coursesContainer.html(html);
-
-                // Update course count
-                const count = response && keyword.length > 0 ? response.length : <?php echo count($availableCourses ?? []) ?>;
-                $('.col-md-4:nth-child(2) h3').text(count);
-
-                // Re-enable button
-                button.prop('disabled', false).html(originalText);
-            },
-            error: function(xhr, status, error) {
-                // Show error message
-                const alertHtml = `
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        An error occurred while searching. Please try again.
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                `;
-                $('body').prepend(alertHtml);
-
-                // Re-enable button
-                button.prop('disabled', false).html(originalText);
-            }
-        });
-    }
-
-    // Handle real-time search with debouncing
-    $('#availableSearchInput').on('input', function() {
-        debounceSearch(function() {
-            performSearch();
-        });
-    });
-
-    // Handle search button click
-    $('#availableServerSearchBtn').on('click', function(e) {
-        e.preventDefault();
-        performSearch();
-    });
-
-    // Handle Enter key in search input
-    $('#availableSearchInput').on('keypress', function(e) {
-        if (e.which === 13) { // Enter key
-            e.preventDefault();
-            performSearch();
-        }
-    });
+    // Student dashboard Available Courses search is handled via client-side filtering.
 });
 
 <?php if ($role === 'teacher' && !empty($pendingEnrollments)): ?>
@@ -1124,7 +1220,46 @@ $(document).on('click', '.reject-enrollment-btn', function() {
 });
 <?php endif; ?>
 </script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var fileInputs = document.querySelectorAll('input[type="file"][name="material_file"]');
+
+    function validateFileInput(input) {
+        var file = input.files && input.files[0] ? input.files[0] : null;
+        if (!file) return true;
+
+        var name = (file.name || '').toLowerCase();
+        var ext = name.split('.').pop();
+        if (ext !== 'pdf' && ext !== 'ppt') {
+            alert('Invalid file type. Only PDF and PPT files are allowed.');
+            input.value = '';
+            return false;
+        }
+
+        if (typeof file.size === 'number' && file.size > (10 * 1024 * 1024)) {
+            alert('File size too large. Maximum size is 10MB.');
+            input.value = '';
+            return false;
+        }
+
+        return true;
+    }
+
+    fileInputs.forEach(function (input) {
+        input.addEventListener('change', function () {
+            validateFileInput(input);
+        });
+
+        var form = input.closest('form');
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                if (!validateFileInput(input)) {
+                    e.preventDefault();
+                }
+            });
+        }
+    });
+});
+</script>
 <?php echo $this->endSection() ?>
-
-
-

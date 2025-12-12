@@ -23,43 +23,36 @@ class Course extends BaseController
     }
 
     /**
-     * Search for courses via GET 'keyword'.
+     * Search for courses via GET or POST 'search_term'.
      * If AJAX: return JSON list of matched courses.
-     * If not AJAX: return the index view with all courses.
+     * If not AJAX: render a view with search results.
      */
     public function search()
     {
-        $keyword = $this->request->getGet('keyword');
-        $keyword = is_null($keyword) ? '' : trim((string) $keyword);
-        $availableOnly = (bool) $this->request->getGet('availableOnly');
-
-        $session = session();
-        $userId = $session->get('userId');
-        $userEmail = $session->get('userEmail');
-        if (!$userId && $userEmail) {
-            // derive userId from email if not set in session
-            $userModel = new \App\Models\UserModel();
-            $user = $userModel->where('email', $userEmail)->first();
-            if ($user) {
-                $userId = $user['id'];
-            }
+        // Accept search term from GET or POST
+        $searchTerm = $this->request->getGet('search_term');
+        
+        if (empty($searchTerm)) {
+            $searchTerm = $this->request->getPost('search_term');
         }
-        $userRole = strtolower((string)$session->get('userRole'));
-
-        // Use model to search courses; if availableOnly is set and student, restrict to un-enrolled courses for that user
-        if ($availableOnly && $userId && $userRole === 'student') {
-            $matched = $this->courseModel->searchAvailableCoursesForUser($keyword, $userId);
-        } else {
-            $matched = $this->courseModel->searchCourses($keyword);
+        
+        $searchTerm = $searchTerm ? trim((string) $searchTerm) : '';
+        
+        // Use CodeIgniter's Query Builder to search the courses table using LIKE queries
+        if (!empty($searchTerm)) {
+            $this->courseModel->like('title', $searchTerm);
+            $this->courseModel->orLike('description', $searchTerm);
         }
-
+        
+        $courses = $this->courseModel->findAll();
+        
+        // Return results as JSON for AJAX requests
         if ($this->request->isAJAX()) {
-            return $this->response->setJSON($matched);
+            return $this->response->setJSON(['courses' => $courses, 'searchTerm' => $searchTerm]);
         }
-
-        // Non-AJAX: show index page with all courses
-        $courses = $this->courseModel->getAvailableCourses();
-        return view('courses/index', ['courses' => $courses]);
+        
+        // Render a view for regular requests
+        return view('courses/search_results', ['courses' => $courses, 'searchTerm' => $searchTerm]);
     }
 
     /**
@@ -536,6 +529,7 @@ class Course extends BaseController
                 $notificationData = [
                     'user_id' => $user_id,
                     'message' => 'Your enrollment request for ' . $course['title'] . ' is pending teacher approval.',
+                    'is_read' => 0,
                     'created_at' => date('Y-m-d H:i:s')
                 ];
                 $notificationModel->insert($notificationData);
@@ -545,6 +539,7 @@ class Course extends BaseController
                     $teacherNotification = [
                         'user_id' => $course['instructor_id'],
                         'message' => 'New enrollment request from ' . ($user['name'] ?? $user['email']) . ' for ' . $course['title'] . '.',
+                        'is_read' => 0,
                         'created_at' => date('Y-m-d H:i:s')
                     ];
                     $notificationModel->insert($teacherNotification);
@@ -556,6 +551,7 @@ class Course extends BaseController
                 $notificationData = [
                     'user_id' => $user_id,
                     'message' => 'You have been enrolled in ' . $course['title'] . '.',
+                    'is_read' => 0,
                     'created_at' => date('Y-m-d H:i:s')
                 ];
                 $notificationModel->insert($notificationData);
@@ -646,6 +642,7 @@ class Course extends BaseController
             $studentNotification = [
                 'user_id' => $enrollment['user_id'],
                 'message' => 'Your enrollment request for ' . $course['title'] . ' has been approved.',
+                'is_read' => 0,
                 'created_at' => date('Y-m-d H:i:s')
             ];
             $notificationModel->insert($studentNotification);
@@ -730,6 +727,7 @@ class Course extends BaseController
             $studentNotification = [
                 'user_id' => $enrollment['user_id'],
                 'message' => 'Your enrollment request for ' . $course['title'] . ' has been rejected.',
+                'is_read' => 0,
                 'created_at' => date('Y-m-d H:i:s')
             ];
             $notificationModel->insert($studentNotification);

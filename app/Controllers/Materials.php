@@ -67,13 +67,28 @@ class Materials extends BaseController
         // Load upload library
         $file = $this->request->getFile('material_file');
 
+        if (!$file) {
+            return redirect()->back()->with('error', 'No file selected. Please choose a PDF or PPT file (max 10MB).');
+        }
+
+        $uploadError = $file->getError();
+        if ($uploadError === UPLOAD_ERR_NO_FILE) {
+            return redirect()->back()->with('error', 'No file selected. Please choose a PDF or PPT file (max 10MB).');
+        }
+        if (in_array($uploadError, [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true)) {
+            return redirect()->back()->with('error', 'File size too large. Maximum size is 10MB.');
+        }
+        if ($uploadError !== UPLOAD_ERR_OK) {
+            return redirect()->back()->with('error', 'File upload failed. Please try again.');
+        }
+
         // Validate file
         if (!$file->isValid()) {
             return redirect()->back()->with('error', 'Invalid file upload.');
         }
 
         // Check file type - Only PDF and PPT files allowed
-        $allowedTypes = ['pdf', 'ppt', 'pptx'];
+        $allowedTypes = ['pdf', 'ppt'];
         $fileExtension = strtolower($file->getExtension());
         if (!in_array($fileExtension, $allowedTypes)) {
             return redirect()->back()->with('error', 'Invalid file type. Only PDF and PPT files are allowed.');

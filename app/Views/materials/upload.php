@@ -35,7 +35,7 @@
                             <div class="mb-3">
                                 <label for="material_file" class="form-label">Select Material File</label>
                                 <input type="file" class="form-control" id="material_file" name="material_file" required
-                                       accept=".pdf,.ppt,.pptx">
+                                       accept=".pdf,.ppt">
                                 <div class="form-text">
                                     Allowed file types: PDF and PPT only. Maximum size: 10MB.
                                 </div>
@@ -80,5 +80,45 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var form = document.querySelector('form[action*="materials/upload"]');
+            var input = document.getElementById('material_file');
+            if (!form || !input) return;
+
+            function isAllowedFile(file) {
+                var name = (file && file.name ? file.name : '').toLowerCase();
+                var ext = name.split('.').pop();
+                return ext === 'pdf' || ext === 'ppt';
+            }
+
+            function isAllowedSize(file) {
+                return file && typeof file.size === 'number' && file.size <= (10 * 1024 * 1024);
+            }
+
+            function validateSelection() {
+                var file = input.files && input.files[0] ? input.files[0] : null;
+                if (!file) return true;
+                if (!isAllowedFile(file)) {
+                    alert('Invalid file type. Only PDF and PPT files are allowed.');
+                    input.value = '';
+                    return false;
+                }
+                if (!isAllowedSize(file)) {
+                    alert('File size too large. Maximum size is 10MB.');
+                    input.value = '';
+                    return false;
+                }
+                return true;
+            }
+
+            input.addEventListener('change', validateSelection);
+            form.addEventListener('submit', function (e) {
+                if (!validateSelection()) {
+                    e.preventDefault();
+                }
+            });
+        });
+    </script>
 </body>
 </html>

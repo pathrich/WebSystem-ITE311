@@ -19,9 +19,18 @@
         </div>
     </div>
 <?php else: ?>
-    <div class="row">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Your Courses</h5>
+        <div class="w-50">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                <input type="text" id="courseSearchInput" class="form-control" placeholder="Search courses by title or description...">
+            </div>
+        </div>
+    </div>
+    <div class="row" id="teacherCoursesContainer">
         <?php foreach ($teacherCourses as $course): ?>
-            <div class="col-md-6 mb-4">
+            <div class="col-md-6 mb-4 teacher-course-item">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-header bg-primary text-white">
                         <h5 class="mb-0"><?= esc($course['title']) ?></h5>
@@ -94,5 +103,22 @@
         <?php endforeach; ?>
     </div>
 <?php endif; ?>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var input = document.getElementById('courseSearchInput');
+    if (!input) return;
+
+    input.addEventListener('keyup', function() {
+        var value = this.value.toLowerCase();
+        var items = document.querySelectorAll('#teacherCoursesContainer .teacher-course-item');
+        items.forEach(function(item) {
+            var text = item.textContent.toLowerCase();
+            item.style.display = text.indexOf(value) > -1 ? '' : 'none';
+        });
+    });
+});
+</script>
+
 <?= $this->endSection() ?>
 

@@ -74,9 +74,6 @@
                   <li><a class="dropdown-item" href="#"><i class="bi bi-plus-circle"></i> Create Assignment</a></li>
                 </ul>
               </li>
-              <li class="nav-item">
-                <a class="nav-link" href="#"><i class="bi bi-chat-dots"></i> Messages</a>
-              </li>
 
             <?php elseif ($role === 'student'): ?>
               <!-- Student Navigation -->
@@ -92,21 +89,21 @@
                   <li><a class="dropdown-item" href="#"><i class="bi bi-calendar-event"></i> Schedule</a></li>
                 </ul>
               </li>
-              <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" id="notifications-toggle">
-                  <i class="bi bi-bell"></i> Notifications
-                  <?php if (isset($unreadNotificationsCount) && $unreadNotificationsCount > 0): ?>
-                    <span class="badge bg-danger" id="notification-badge"><?= $unreadNotificationsCount ?></span>
-                  <?php endif; ?>
-                </a>
-                <ul class="dropdown-menu dropdown-menu-end" id="notification-dropdown">
-                  <li><h6 class="dropdown-header">Notifications</h6></li>
-                  <!-- Notifications will be loaded here via AJAX -->
-                  <li><hr class="dropdown-divider"></li>
-                  <li><a class="dropdown-item text-center" href="#">View All</a></li>
-                </ul>
-              </li>
             <?php endif; ?>
+
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" id="notifications-toggle" aria-label="Notifications">
+                <i class="bi bi-bell"></i> Notifications
+                <?php if (isset($unreadNotificationsCount) && $unreadNotificationsCount > 0): ?>
+                  <span class="badge bg-danger ms-1" id="notification-badge"><?= $unreadNotificationsCount ?></span>
+                <?php endif; ?>
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end" id="notification-dropdown">
+                <li><h6 class="dropdown-header">Notifications</h6></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item text-center" href="#" data-bs-toggle="modal" data-bs-target="#notificationsModal">View All</a></li>
+              </ul>
+            </li>
 
             <!-- User Account Dropdown -->
             <li class="nav-item dropdown">

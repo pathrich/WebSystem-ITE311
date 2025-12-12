@@ -6,21 +6,37 @@
   <div class="col-12">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h3 class="mb-0">Courses</h3>
-      <div class="input-group w-50">
-        <input type="text" id="searchInput" class="form-control" placeholder="Search courses..." aria-label="Search courses">
-        <button class="btn btn-outline-secondary" id="serverSearchBtn" type="button">Search</button>
+    </div>
+
+    <div class="row mb-4">
+      <div class="col-md-8 col-lg-6">
+        <form id="searchForm" method="get" action="<?= site_url('courses/search') ?>">
+          <div class="input-group">
+            <input type="text" id="searchInput" class="form-control" placeholder="Search courses by title or description..." name="search_term">
+            <button class="btn btn-outline-secondary" type="submit">
+              <i class="bi bi-search"></i>
+            </button>
+          </div>
+          <div class="form-check mt-2">
+            <input class="form-check-input" type="checkbox" id="useServerSearch">
+            <label class="form-check-label" for="useServerSearch">
+              Use server-side search (comprehensive results)
+            </label>
+          </div>
+        </form>
       </div>
     </div>
-    <div id="courseResults" class="row g-3">
+    <div id="coursesContainer" class="row">
       <?php if (isset($courses) && is_array($courses) && count($courses) > 0): ?>
         <?php foreach ($courses as $course): ?>
-          <div class="col-12 col-md-6 course-item">
-            <div class="card h-100">
+          <div class="col-md-4 mb-4 course-item">
+            <div class="card course-card h-100">
               <div class="card-body">
-                <h5 class="card-title"><?= esc($course['title']) ?></h5>
-                <h6 class="card-subtitle mb-2 text-muted">By: <?= esc($course['instructor_name'] ?? '') ?></h6>
-                <p class="card-text"><?= esc($course['description']) ?></p>
-                <div class="small text-muted">Added: <?= esc($course['created_at'] ?? '') ?></div>
+                <h5 class="card-title"><?= esc($course['title'] ?? $course['course_name'] ?? '') ?></h5>
+                <p class="card-text"><?= esc($course['description'] ?? $course['course_description'] ?? '') ?></p>
+                <?php if (!empty($course['id'])): ?>
+                  <a href="<?= site_url('courses/view/' . $course['id']) ?>" class="btn btn-primary">View Course</a>
+                <?php endif; ?>
               </div>
             </div>
           </div>
@@ -34,71 +50,62 @@
   </div>
 </div>
 
-<!-- Client-side and Server-side search scripts -->
+<!-- Client-side and AJAX search scripts (per instruction) -->
 <script>
-  function initCourseSearch() {
-    $(function() {
-    // Client-side filtering and server-side AJAX search (with debounce)
-
-    // Server-side AJAX search with debounce
-    var debounceTimer = null;
-    function performServerSearch(keyword) {
-      $.ajax({
-        url: '<?= site_url('courses/search') ?>',
-        method: 'GET',
-        data: { keyword: keyword },
-        dataType: 'json',
-        success: function(data) {
-          // Replace the courseResults content
-          var html = '';
-          if (!data || data.length === 0) {
-            html = '<div class="col-12"><div class="alert alert-warning">No courses found</div></div>';
-          } else {
-            data.forEach(function(c) {
-              html += '<div class="col-12 col-md-6 course-item">';
-              html += '<div class="card h-100"><div class="card-body">';
-              html += '<h5 class="card-title">' + $('<div/>').text(c.title).html() + '</h5>';
-              html += '<h6 class="card-subtitle mb-2 text-muted">By: ' + $('<div/>').text(c.instructor_name || '').html() + '</h6>';
-              html += '<p class="card-text">' + $('<div/>').text(c.description || '').html() + '</p>';
-              html += '<div class="small text-muted">Added: ' + $('<div/>').text(c.created_at || '').html() + '</div>';
-              html += '</div></div></div>';
-            });
-          }
-          $('#courseResults').html(html);
-        },
-        error: function() {
-          $('#courseResults').html('<div class="col-12"><div class="alert alert-danger">Error fetching courses.</div></div>');
-        }
-      });
-    }
-
+  $(document).ready(function() {
+    // Client-side filtering (always active on keyup)
     $('#searchInput').on('keyup', function() {
-      var keyword = $(this).val();
-
-      // Instant client-side filtering
-      var q = keyword.toLowerCase();
-      $('.course-item').each(function() {
-        var text = $(this).text().toLowerCase();
-        $(this).toggle(text.indexOf(q) > -1);
+      var value = $(this).val().toLowerCase();
+      $('.course-item').filter(function() {
+        $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
       });
-
-      // Debounced server-side search
-      if (debounceTimer) { clearTimeout(debounceTimer); }
-      debounceTimer = setTimeout(function() { performServerSearch(keyword); }, 300);
     });
 
-    $('#serverSearchBtn').on('click', function() {
-      var keyword = $('#searchInput').val();
-      performServerSearch(keyword);
-    });
-    });
-  }
+    // Server-side search with AJAX (only when checkbox is checked)
+    $('#searchForm').on('submit', function(e) {
+      e.preventDefault();
 
-  if (window.jQuery) {
-    initCourseSearch();
-  } else {
-    window.addEventListener('load', initCourseSearch);
-  }
+      var searchTerm = $('#searchInput').val();
+      var useServer = $('#useServerSearch').is(':checked');
+
+      if (!useServer) {
+        // If not using server-side search, rely on client-side filter only
+        // Trigger keyup handler to ensure filter is applied
+        $('#searchInput').trigger('keyup');
+        return;
+      }
+
+      $.get('<?= site_url('courses/search') ?>', { search_term: searchTerm }, function(response) {
+        // Expecting { courses: [...], searchTerm: '...' }
+        var data = response && response.courses ? response.courses : [];
+
+        $('#coursesContainer').empty();
+
+        if (data.length > 0) {
+          $.each(data, function(index, course) {
+            var title = course.title || course.course_name || '';
+            var description = course.description || course.course_description || '';
+            var id = course.id || '';
+
+            var courseHtml =
+              '<div class="col-md-4 mb-4 course-item">' +
+                '<div class="card course-card h-100">' +
+                  '<div class="card-body">' +
+                    '<h5 class="card-title">' + $('<div/>').text(title).html() + '</h5>' +
+                    '<p class="card-text">' + $('<div/>').text(description).html() + '</p>' +
+                    (id ? '<a href="<?= site_url('courses/view') ?>/' + id + '" class="btn btn-primary">View Course</a>' : '') +
+                  '</div>' +
+                '</div>' +
+              '</div>';
+
+            $('#coursesContainer').append(courseHtml);
+          });
+        } else {
+          $('#coursesContainer').html('<div class="col-12"><div class="alert alert-info">No courses found matching your search.</div></div>');
+        }
+      }, 'json');
+    });
+  });
 </script>
 
 <?= $this->endSection() ?>

@@ -59,8 +59,14 @@
     </div>
     <div class="card-body">
         <?php if (!empty($students)): ?>
+            <div class="d-flex justify-content-end mb-3">
+                <div class="input-group input-group-sm" style="max-width: 300px;">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" id="studentSearchInput" class="form-control" placeholder="Search students...">
+                </div>
+            </div>
             <div class="table-responsive">
-                <table class="table table-hover">
+                <table class="table table-hover" id="studentsTable">
                     <thead>
                         <tr>
                             <th>#</th>
@@ -73,7 +79,7 @@
                     </thead>
                     <tbody>
                         <?php foreach ($students as $index => $enrollment): ?>
-                        <tr>
+                        <tr class="student-row">
                             <td><?= $index + 1 ?></td>
                             <td>
                                 <strong><?= esc($enrollment['student_name']) ?></strong>
@@ -117,6 +123,14 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 $(document).ready(function() {
+    // Client-side search/filter for enrolled students
+    $('#studentSearchInput').on('keyup', function() {
+        var value = $(this).val().toLowerCase();
+        $('#studentsTable .student-row').filter(function() {
+            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+        });
+    });
+
     // Handle enroll student form submission
     $('#enrollStudentForm').on('submit', function(e) {
         e.preventDefault();

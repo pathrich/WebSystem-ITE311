@@ -179,7 +179,8 @@ class UserController extends BaseController
             'status' => $this->request->getPost('status'),
         ];
 
-        // Only update password if provided, and prevent reuse of old password
+        // Check if password is being updated
+        $passwordChanged = false;
         if ($this->request->getPost('password')) {
             $newPassword = $this->request->getPost('password');
             // Check if new password matches old password
@@ -187,6 +188,7 @@ class UserController extends BaseController
                 return redirect()->back()->withInput()->with('error', 'You cannot reuse your previous password. Please create a new one.');
             }
             $updateData['password'] = $newPassword;
+            $passwordChanged = true;
         }
 
         $result = $this->userModel->update($id, $updateData);
@@ -214,13 +216,13 @@ class UserController extends BaseController
                 ]);
             }
 
-            // Only logout if user is updating their own account
-            if ($currentUserId == $id) {
+            // If password was changed, redirect to login page
+            if ($passwordChanged) {
                 $session->destroy();
-                return redirect()->to('/login')->with('success', 'Your account has been updated. Please login again.');
+                return redirect()->to('/login')->with('success', 'Password has been updated. Please login with your new password.');
             }
 
-            // If admin is updating another user, redirect back to users list
+            // If no password change, redirect back to users list
             return redirect()->to(base_url('users'))->with('success', 'User updated successfully.');
         }
 
