@@ -23,6 +23,85 @@ class ScheduleModel extends Model
     protected $createdField = 'created_at';
     protected $updatedField = 'updated_at';
 
+    protected function normalizeDayOfWeek($day)
+    {
+        $day = strtolower(trim((string) $day));
+        $map = [
+            'mon' => 'monday',
+            'tue' => 'tuesday',
+            'tues' => 'tuesday',
+            'wed' => 'wednesday',
+            'thu' => 'thursday',
+            'thur' => 'thursday',
+            'thurs' => 'thursday',
+            'fri' => 'friday',
+            'sat' => 'saturday',
+            'sun' => 'sunday',
+        ];
+        return $map[$day] ?? $day;
+    }
+
+    protected function timeToSeconds($time)
+    {
+        $time = trim((string) $time);
+        if ($time === '') {
+            return null;
+        }
+
+        $parts = explode(':', $time);
+        if (count($parts) < 2) {
+            return null;
+        }
+
+        $h = (int) $parts[0];
+        $m = (int) $parts[1];
+        $s = isset($parts[2]) ? (int) $parts[2] : 0;
+        return ($h * 3600) + ($m * 60) + $s;
+    }
+
+    public function getScheduleOverlapDetails($courseId1, $courseId2)
+    {
+        if ((int) $courseId1 === (int) $courseId2) {
+            return [];
+        }
+
+        $schedules1 = $this->getSchedulesByCourse($courseId1);
+        $schedules2 = $this->getSchedulesByCourse($courseId2);
+
+        $overlaps = [];
+
+        foreach ($schedules1 as $schedule1) {
+            foreach ($schedules2 as $schedule2) {
+                $day1 = $this->normalizeDayOfWeek($schedule1['day_of_week'] ?? '');
+                $day2 = $this->normalizeDayOfWeek($schedule2['day_of_week'] ?? '');
+                if ($day1 === '' || $day2 === '' || $day1 !== $day2) {
+                    continue;
+                }
+
+                $start1 = $this->timeToSeconds($schedule1['start_time'] ?? '');
+                $end1 = $this->timeToSeconds($schedule1['end_time'] ?? '');
+                $start2 = $this->timeToSeconds($schedule2['start_time'] ?? '');
+                $end2 = $this->timeToSeconds($schedule2['end_time'] ?? '');
+
+                if ($start1 === null || $end1 === null || $start2 === null || $end2 === null) {
+                    continue;
+                }
+
+                if ($start1 < $end2 && $start2 < $end1) {
+                    $overlaps[] = [
+                        'day_of_week' => $schedule1['day_of_week'],
+                        'course1_start_time' => $schedule1['start_time'],
+                        'course1_end_time' => $schedule1['end_time'],
+                        'course2_start_time' => $schedule2['start_time'],
+                        'course2_end_time' => $schedule2['end_time'],
+                    ];
+                }
+            }
+        }
+
+        return $overlaps;
+    }
+
     /**
      * Get schedules by course
      */
@@ -39,28 +118,7 @@ class ScheduleModel extends Model
      */
     public function hasScheduleConflict($courseId1, $courseId2)
     {
-        $schedules1 = $this->getSchedulesByCourse($courseId1);
-        $schedules2 = $this->getSchedulesByCourse($courseId2);
-
-        foreach ($schedules1 as $schedule1) {
-            foreach ($schedules2 as $schedule2) {
-                // Check if same day
-                if ($schedule1['day_of_week'] === $schedule2['day_of_week']) {
-                    // Check if time overlaps
-                    $start1 = strtotime($schedule1['start_time']);
-                    $end1 = strtotime($schedule1['end_time']);
-                    $start2 = strtotime($schedule2['start_time']);
-                    $end2 = strtotime($schedule2['end_time']);
-
-                    // Check for overlap: start1 < end2 && start2 < end1
-                    if ($start1 < $end2 && $start2 < $end1) {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return false;
+        return !empty($this->getScheduleOverlapDetails($courseId1, $courseId2));
     }
 
     /**
@@ -96,6 +154,9 @@ class ScheduleModel extends Model
         $teacherCourses = $courseModel->where('instructor_id', $teacherId)->findAll();
 
         foreach ($teacherCourses as $course) {
+            if ((int) $course['id'] === (int) $newCourseId) {
+                continue;
+            }
             if ($this->hasScheduleConflict($course['id'], $newCourseId)) {
                 return [
                     'has_conflict' => true,

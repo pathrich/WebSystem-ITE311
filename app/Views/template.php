@@ -82,11 +82,11 @@
                   <i class="bi bi-book"></i> Learning
                 </a>
                 <ul class="dropdown-menu">
-                  <li><a class="dropdown-item" href="#"><i class="bi bi-collection"></i> My Courses</a></li>
-                  <li><a class="dropdown-item" href="#"><i class="bi bi-clipboard-check"></i> Assignments</a></li>
-                  <li><a class="dropdown-item" href="#"><i class="bi bi-award"></i> Grades</a></li>
+                  <li><a class="dropdown-item" href="<?= base_url('my-courses') ?>"><i class="bi bi-collection"></i> My Courses</a></li>
+                  <li><a class="dropdown-item" href="<?= base_url('assignments') ?>"><i class="bi bi-clipboard-check"></i> Assignments</a></li>
+                  <li><a class="dropdown-item" href="<?= base_url('grades') ?>"><i class="bi bi-award"></i> Grades</a></li>
                   <li><hr class="dropdown-divider"></li>
-                  <li><a class="dropdown-item" href="#"><i class="bi bi-calendar-event"></i> Schedule</a></li>
+                  <li><a class="dropdown-item" href="<?= base_url('schedule') ?>"><i class="bi bi-calendar-event"></i> Schedule</a></li>
                 </ul>
               </li>
             <?php endif; ?>

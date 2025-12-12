@@ -99,7 +99,7 @@ class EnrollmentModel extends Model
         
         $results = $builder->select('enrollments.*, courses.title, courses.description, users.name as instructor_name')
             ->join('courses', 'courses.id = enrollments.course_id')
-            ->join('users', 'users.id = courses.instructor_id')
+            ->join('users', 'users.id = courses.instructor_id', 'left')
             ->where('enrollments.user_id', $user_id)
             ->where('enrollments.status', 'approved')
             ->get()
@@ -125,7 +125,7 @@ class EnrollmentModel extends Model
         
         $results = $builder->select('enrollments.*, courses.title, courses.description, users.name as instructor_name')
             ->join('courses', 'courses.id = enrollments.course_id')
-            ->join('users', 'users.id = courses.instructor_id')
+            ->join('users', 'users.id = courses.instructor_id', 'left')
             ->where('enrollments.user_id', $user_id)
             ->where('enrollments.status', 'pending')
             ->get()

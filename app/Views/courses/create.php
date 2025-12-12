@@ -43,7 +43,9 @@
                 <div class="col-md-6">
                     <label for="title" class="form-label">Course Title <span class="text-danger">*</span></label>
                     <input type="text" class="form-control" id="title" name="title" 
-                           value="<?= old('title') ?>" required placeholder="e.g., Introduction to Programming">
+                           value="<?= old('title') ?>" required placeholder="e.g., Introduction to Programming"
+                           pattern="[A-Za-z ]+" title="Course title must contain letters and spaces only."
+                           oninput="this.value = this.value.replace(/[^A-Za-z ]/g, '');">
                 </div>
             </div>
 
@@ -366,6 +368,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Pad with zeros to ensure 4 digits
                 const paddedValue = cnValue.padStart(4, '0');
                 $('#course_number').val(paddedValue);
+            }
+        });
+
+        // Restrict Course Title: letters and spaces only
+        $('#title').on('input', function() {
+            const value = $(this).val();
+            const sanitized = value.replace(/[^A-Za-z ]/g, '');
+            if (value !== sanitized) {
+                $(this).val(sanitized);
+            }
+
+            if (sanitized.length > 0 && !/^[A-Za-z ]+$/.test(sanitized)) {
+                $(this).addClass('is-invalid');
+                $(this).next('.invalid-feedback').remove();
+                $(this).after('<div class="invalid-feedback">Course title must contain letters and spaces only.</div>');
+            } else {
+                $(this).removeClass('is-invalid');
+                $(this).next('.invalid-feedback').remove();
             }
         });
     });

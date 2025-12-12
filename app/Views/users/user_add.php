@@ -50,7 +50,7 @@
                                     <i class="fas fa-user me-1"></i>Full Name <span class="text-danger">*</span>
                                 </label>
                                 <input type="text" class="form-control <?= isset($errors['name']) ? 'is-invalid' : '' ?>"
-                                       id="name" name="name" value="<?= old('name') ?>" required>
+                                       id="name" name="name" value="<?= old('name') ?>" required pattern="[A-Za-z ]+" title="Name must contain letters and spaces only.">
                                 <div class="invalid-feedback">
                                     <?= isset($errors['name']) ? $errors['name'] : '' ?>
                                 </div>
@@ -61,7 +61,7 @@
                                     <i class="fas fa-at me-1"></i>Username <span class="text-danger">*</span>
                                 </label>
                                 <input type="text" class="form-control <?= isset($errors['username']) ? 'is-invalid' : '' ?>"
-                                       id="username" name="username" value="<?= old('username') ?>" required>
+                                       id="username" name="username" value="<?= old('username') ?>" required pattern="[A-Za-z0-9_]+" title="Username may contain letters, numbers, and underscore only.">
                                 <div class="invalid-feedback">
                                     <?= isset($errors['username']) ? $errors['username'] : '' ?>
                                 </div>
@@ -152,6 +152,37 @@
 
 <script>
 $(document).ready(function() {
+    function setFieldValidity($input, isValid, message) {
+        if (isValid) {
+            $input.removeClass('is-invalid');
+            $input.siblings('.invalid-feedback').text('');
+        } else {
+            $input.addClass('is-invalid');
+            $input.siblings('.invalid-feedback').text(message);
+        }
+    }
+
+    function validateName() {
+        const $name = $('#name');
+        const value = ($name.val() || '').trim();
+        if (!value) return true;
+        const ok = /^[A-Za-z ]+$/.test(value);
+        setFieldValidity($name, ok, 'Name must contain letters and spaces only.');
+        return ok;
+    }
+
+    function validateUsername() {
+        const $username = $('#username');
+        const value = ($username.val() || '').trim();
+        if (!value) return true;
+        const ok = /^[A-Za-z0-9_]+$/.test(value);
+        setFieldValidity($username, ok, 'Username may contain letters, numbers, and underscore only.');
+        return ok;
+    }
+
+    $('#name').on('input', validateName);
+    $('#username').on('input', validateUsername);
+
     // Password confirmation validation
     $('#password_confirm').on('keyup', function() {
         const password = $('#password').val();
@@ -173,6 +204,13 @@ $(document).ready(function() {
         if (username.length >= 3) {
             // You can add AJAX call here to check username availability
             console.log('Checking username availability:', username);
+        }
+    });
+
+    $('form').on('submit', function(e) {
+        const ok = validateName() && validateUsername();
+        if (!ok) {
+            e.preventDefault();
         }
     });
 });

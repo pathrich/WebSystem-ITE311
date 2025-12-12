@@ -869,40 +869,26 @@ class AcademicManagement extends BaseController
             
             foreach ($teacherCourses as $teacherCourse) {
                 if ($teacherCourse['id'] != $courseId) { // Don't check against the same course
-                    if ($scheduleModel->hasScheduleConflict($courseId, $teacherCourse['id'])) {
+                    $overlaps = $scheduleModel->getScheduleOverlapDetails($courseId, $teacherCourse['id']);
+                    if (!empty($overlaps)) {
                         $conflictingCourses[] = $teacherCourse['title'];
-                        
-                        // Get detailed conflict information
-                        $newCourseSchedules = $scheduleModel->getSchedulesByCourse($courseId);
-                        $existingCourseSchedules = $scheduleModel->getSchedulesByCourse($teacherCourse['id']);
-                        
-                        foreach ($newCourseSchedules as $newSchedule) {
-                            foreach ($existingCourseSchedules as $existingSchedule) {
-                                if ($newSchedule['day_of_week'] === $existingSchedule['day_of_week']) {
-                                    $start1 = strtotime($newSchedule['start_time']);
-                                    $end1 = strtotime($newSchedule['end_time']);
-                                    $start2 = strtotime($existingSchedule['start_time']);
-                                    $end2 = strtotime($existingSchedule['end_time']);
-                                    
-                                    if ($start1 < $end2 && $start2 < $end1) {
-                                        $startTime1 = date('g:i A', $start1);
-                                        $endTime1 = date('g:i A', $end1);
-                                        $startTime2 = date('g:i A', $start2);
-                                        $endTime2 = date('g:i A', $end2);
-                                        
-                                        $conflictDetails[] = sprintf(
-                                            '%s: %s %s-%s conflicts with %s %s-%s',
-                                            $teacherCourse['title'],
-                                            $newSchedule['day_of_week'],
-                                            $startTime1,
-                                            $endTime1,
-                                            $existingSchedule['day_of_week'],
-                                            $startTime2,
-                                            $endTime2
-                                        );
-                                    }
-                                }
-                            }
+
+                        foreach ($overlaps as $overlap) {
+                            $start1 = date('g:i A', strtotime($overlap['course1_start_time']));
+                            $end1 = date('g:i A', strtotime($overlap['course1_end_time']));
+                            $start2 = date('g:i A', strtotime($overlap['course2_start_time']));
+                            $end2 = date('g:i A', strtotime($overlap['course2_end_time']));
+
+                            $conflictDetails[] = sprintf(
+                                '%s: %s %s-%s conflicts with %s %s-%s',
+                                $teacherCourse['title'],
+                                $overlap['day_of_week'],
+                                $start1,
+                                $end1,
+                                $overlap['day_of_week'],
+                                $start2,
+                                $end2
+                            );
                         }
                     }
                 }

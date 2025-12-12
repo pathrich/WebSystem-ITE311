@@ -178,6 +178,7 @@ class Auth extends BaseController
                 $enrollmentModel = new \App\Models\EnrollmentModel();
                 $courseModel = new \App\Models\CourseModel();
                 $materialModel = new \App\Models\MaterialModel();
+                $courseScheduleModel = new \App\Models\CourseScheduleModel();
 
                 // Debug: Log user ID and check enrollments
                 log_message('debug', 'Dashboard: Loading enrollments for user ID: ' . $user['id']);
@@ -186,6 +187,14 @@ class Auth extends BaseController
                 $data['enrollments'] = $enrollmentModel->getApprovedEnrollments($user['id']);
                 $data['pendingEnrollments'] = $enrollmentModel->getPendingEnrollments($user['id']);
                 $data['availableCourses'] = $courseModel->getAvailableCoursesForUser($user['id']);
+
+                $data['enrollmentSchedules'] = [];
+                try {
+                    $courseIds = array_column($data['enrollments'], 'course_id');
+                    $data['enrollmentSchedules'] = $courseScheduleModel->getSchedulesForCourses($courseIds);
+                } catch (\Throwable $e) {
+                    $data['enrollmentSchedules'] = [];
+                }
 
                 // Debug: Log enrollment count
                 log_message('debug', 'Dashboard: Found ' . count($data['enrollments']) . ' enrollments for user ID: ' . $user['id']);
@@ -280,7 +289,7 @@ class Auth extends BaseController
             $data = $this->prepareViewData($data);
 
             return view('auth/dashboard', $data);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             // If there's any error, show a simple error message
             return "Dashboard error: " . $e->getMessage();
         }

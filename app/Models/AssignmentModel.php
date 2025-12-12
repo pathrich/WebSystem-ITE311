@@ -51,6 +51,23 @@ class AssignmentModel extends Model
             ->findAll();
     }
 
+    public function getAssignmentsForCourses(array $courseIds)
+    {
+        $courseIds = array_values(array_filter(array_unique(array_map('intval', $courseIds))));
+        if (empty($courseIds)) {
+            return [];
+        }
+
+        return $this->select('assignments.*, courses.title as course_title, users.name as instructor_name')
+            ->join('courses', 'courses.id = assignments.course_id', 'inner')
+            ->join('users', 'users.id = courses.instructor_id', 'left')
+            ->whereIn('assignments.course_id', $courseIds)
+            ->orderBy('courses.title', 'ASC')
+            ->orderBy('assignments.due_date', 'ASC')
+            ->orderBy('assignments.created_at', 'DESC')
+            ->findAll();
+    }
+
     /**
      * Insert a new assignment
      */

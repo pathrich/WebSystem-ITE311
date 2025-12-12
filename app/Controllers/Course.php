@@ -180,6 +180,10 @@ class Course extends BaseController
             return redirect()->back()->withInput()->with('error', 'Course title and control number (CN) are required.');
         }
 
+        if (!preg_match('/^[A-Za-z ]+$/', $title)) {
+            return redirect()->back()->withInput()->with('error', 'Course title must contain letters and spaces only.');
+        }
+
         // Check if CN is unique
         $existingCourse = $this->courseModel->where('course_number', $courseNumber)->first();
         if ($existingCourse) {
@@ -199,6 +203,7 @@ class Course extends BaseController
         $hasAcademicYearField = false;
         $hasSemesterField = false;
         $hasTermField = false;
+        $hasCourseNumberField = false;
         
         foreach ($fields as $field) {
             if ($field->name === 'academic_year_id') {
@@ -258,6 +263,14 @@ class Course extends BaseController
                                 'room' => null, // Room field removed
                             ];
                             $this->scheduleModel->insert($scheduleData);
+
+                            try {
+                                $db2 = \Config\Database::connect();
+                                if ($db2->tableExists('course_schedules')) {
+                                    $db2->table('course_schedules')->insert($scheduleData);
+                                }
+                            } catch (\Throwable $e) {
+                            }
                         }
                     }
                 }
@@ -290,7 +303,7 @@ class Course extends BaseController
             return redirect()->to('/login')->with('error', 'You must be logged in to access this page.');
         }
 
-        $userRole = $session->get('userRole');
+        $userRole = strtolower($session->get('userRole') ?? '');
         if ($userRole !== 'admin' && $userRole !== 'teacher') {
             return redirect()->to('/dashboard')->with('error', 'Access denied.');
         }
@@ -313,11 +326,11 @@ class Course extends BaseController
             return redirect()->to('/dashboard')->with('error', 'User not found.');
         }
 
-        if ($userRole !== 'admin' && $course['instructor_id'] !== $user['id']) {
+        if ($userRole !== 'admin' && (int) ($course['instructor_id'] ?? 0) !== (int) ($user['id'] ?? 0)) {
             return redirect()->to('/dashboard')->with('error', 'Access denied.');
         }
 
-        return view('course/edit', ['course' => $course]);
+        return view('courses/edit', ['course' => $course]);
     }
 
     /**
@@ -331,7 +344,7 @@ class Course extends BaseController
             return redirect()->to('/login')->with('error', 'You must be logged in to access this page.');
         }
 
-        $userRole = $session->get('userRole');
+        $userRole = strtolower($session->get('userRole') ?? '');
         if ($userRole !== 'admin' && $userRole !== 'teacher') {
             return redirect()->to('/dashboard')->with('error', 'Access denied.');
         }
@@ -354,7 +367,7 @@ class Course extends BaseController
             return redirect()->to('/dashboard')->with('error', 'User not found.');
         }
 
-        if ($userRole !== 'admin' && $course['instructor_id'] !== $user['id']) {
+        if ($userRole !== 'admin' && (int) ($course['instructor_id'] ?? 0) !== (int) ($user['id'] ?? 0)) {
             return redirect()->to('/dashboard')->with('error', 'Access denied.');
         }
 

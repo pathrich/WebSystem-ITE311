@@ -702,17 +702,17 @@
                                             Enrolled: <?= date('M d, Y', strtotime($enrollment['enrollment_date'] ?? $enrollment['enrolled_at'] ?? 'now')) ?>
                                         </small>
                                     </div>
-                                    <?php
-                                    // Get schedules for enrolled course
-                                    $scheduleModel = new \App\Models\ScheduleModel();
-                                    $courseSchedules = $scheduleModel->getSchedulesByCourse($enrollment['course_id']);
-                                    if (!empty($courseSchedules)):
-                                    ?>
+                                    <?php $courseSchedules = $enrollmentSchedules[$enrollment['course_id']] ?? []; ?>
+                                    <?php if (!empty($courseSchedules)): ?>
                                         <hr class="my-2">
                                         <small class="text-muted"><i class="fas fa-clock me-1"></i> Schedule:</small>
                                         <ul class="small text-muted mb-0 ps-3">
                                             <?php foreach ($courseSchedules as $schedule): ?>
-                                                <li><?= esc($schedule['day_of_week']) ?>: <?= esc($schedule['start_time']) ?> - <?= esc($schedule['end_time']) ?><?= $schedule['room'] ? ' (' . esc($schedule['room']) . ')' : '' ?></li>
+                                                <?php
+                                                    $startTime = !empty($schedule['start_time']) ? date('g:i A', strtotime($schedule['start_time'])) : '';
+                                                    $endTime = !empty($schedule['end_time']) ? date('g:i A', strtotime($schedule['end_time'])) : '';
+                                                ?>
+                                                <li><?= esc($schedule['day_of_week']) ?>: <?= esc($startTime) ?> - <?= esc($endTime) ?><?= !empty($schedule['room']) ? ' (' . esc($schedule['room']) . ')' : '' ?></li>
                                             <?php endforeach; ?>
                                         </ul>
                                     <?php endif; ?>

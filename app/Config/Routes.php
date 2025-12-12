@@ -29,9 +29,19 @@ $routes->post('/course/approve-enrollment', 'Course::approveEnrollment');
 $routes->post('/course/reject-enrollment', 'Course::rejectEnrollment');
 $routes->get('/course/create', 'Course::create');
 $routes->post('/course/store', 'Course::store');
+$routes->get('/course/edit/(:num)', 'Course::edit/$1');
+$routes->post('/course/update/(:num)', 'Course::update/$1');
 // Course search routes (per instruction)
 $routes->get('/courses/search', 'Course::search');
 $routes->post('/courses/search', 'Course::search');
+
+// Student Learning
+$routes->get('/my-courses', 'StudentCourses::index');
+$routes->get('/schedule', 'StudentSchedule::index');
+$routes->get('/assignments', 'StudentAssignments::index');
+$routes->post('/assignments/submit/(:num)', 'StudentAssignments::submit/$1');
+$routes->get('/assignments/submission/(:num)', 'StudentAssignments::downloadSubmission/$1');
+$routes->get('/grades', 'StudentGrades::index');
 
 // Materials Management
 $routes->get('/materials/upload/(:num)', 'Materials::upload/$1');
