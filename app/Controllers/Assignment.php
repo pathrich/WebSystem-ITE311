@@ -4,16 +4,20 @@ namespace App\Controllers;
 
 use App\Models\AssignmentModel;
 use App\Models\CourseModel;
+use App\Models\EnrollmentModel;
+use App\Models\NotificationModel;
 
 class Assignment extends BaseController
 {
     protected $assignmentModel;
     protected $courseModel;
+    protected $enrollmentModel;
 
     public function __construct()
     {
         $this->assignmentModel = new AssignmentModel();
         $this->courseModel = new CourseModel();
+        $this->enrollmentModel = new EnrollmentModel();
     }
 
     /**
@@ -140,7 +144,42 @@ class Assignment extends BaseController
             'created_by' => $user['id']
         ];
 
-        if ($this->assignmentModel->insertAssignment($data)) {
+        $insertId = $this->assignmentModel->insertAssignment($data);
+        if ($insertId) {
+            // Notify enrolled students (if notifications table exists)
+            try {
+                $db = \Config\Database::connect();
+                if ($db->tableExists('notifications')) {
+                    $enrolledStudents = $db->table('enrollments')
+                        ->select('user_id')
+                        ->where('course_id', (int) $course_id)
+                        ->where('status', 'approved')
+                        ->get()
+                        ->getResultArray();
+
+                    if (!empty($enrolledStudents)) {
+                        $notificationModel = new NotificationModel();
+                        $courseTitle = (string) ($course['title'] ?? '');
+                        $message = 'New assignment posted in ' . $courseTitle . ': ' . $title;
+                        $now = date('Y-m-d H:i:s');
+
+                        foreach ($enrolledStudents as $row) {
+                            $studentId = (int) ($row['user_id'] ?? 0);
+                            if ($studentId > 0) {
+                                $notificationModel->insert([
+                                    'user_id' => $studentId,
+                                    'message' => $message,
+                                    'is_read' => 0,
+                                    'created_at' => $now,
+                                ]);
+                            }
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Do not fail assignment creation if notifications cannot be created
+            }
+
             return redirect()->back()->with('success', 'Assignment created successfully!');
         } else {
             // Delete uploaded file if DB insert failed

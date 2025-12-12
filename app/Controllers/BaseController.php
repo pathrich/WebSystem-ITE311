@@ -66,8 +66,12 @@ abstract class BaseController extends Controller
             $userModel = new \App\Models\UserModel();
             $user = $userModel->where('email', $session->get('userEmail'))->first();
             if ($user) {
-                $notificationModel = new \App\Models\NotificationModel();
-                $data['unreadNotificationsCount'] = $notificationModel->getUnreadCount($user['id']);
+                try {
+                    $notificationModel = new \App\Models\NotificationModel();
+                    $data['unreadNotificationsCount'] = $notificationModel->getUnreadCount($user['id']);
+                } catch (\Throwable $e) {
+                    $data['unreadNotificationsCount'] = 0;
+                }
             }
         }
         return $data;

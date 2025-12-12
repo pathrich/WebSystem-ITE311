@@ -14,6 +14,8 @@ class NotificationModel extends Model
     protected $protectFields    = true;
     protected $allowedFields    = ['user_id', 'message', 'is_read', 'created_at'];
 
+    protected $tableReady;
+
     protected bool $allowEmptyInserts = false;
     protected bool $updateOnlyChanged = true;
 
@@ -49,7 +51,15 @@ class NotificationModel extends Model
      */
     public function getUnreadCount($userId)
     {
-        return $this->where('user_id', $userId)->where('is_read', 0)->countAllResults();
+        if (!$this->isReady()) {
+            return 0;
+        }
+
+        try {
+            return $this->where('user_id', $userId)->where('is_read', 0)->countAllResults();
+        } catch (\Throwable $e) {
+            return 0;
+        }
     }
 
     /**
@@ -57,7 +67,15 @@ class NotificationModel extends Model
      */
     public function getNotificationsForUser($userId)
     {
-        return $this->where('user_id', $userId)->orderBy('created_at', 'DESC')->limit(5)->findAll();
+        if (!$this->isReady()) {
+            return [];
+        }
+
+        try {
+            return $this->where('user_id', $userId)->orderBy('created_at', 'DESC')->limit(5)->findAll();
+        } catch (\Throwable $e) {
+            return [];
+        }
     }
 
     /**
@@ -65,7 +83,15 @@ class NotificationModel extends Model
      */
     public function markAsRead($notificationId)
     {
-        return $this->update($notificationId, ['is_read' => 1]);
+        if (!$this->isReady()) {
+            return false;
+        }
+
+        try {
+            return $this->update($notificationId, ['is_read' => 1]);
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 
     /**
@@ -73,6 +99,30 @@ class NotificationModel extends Model
      */
     public function getAllNotificationsForUser($userId)
     {
-        return $this->where('user_id', $userId)->orderBy('created_at', 'DESC')->findAll();
+        if (!$this->isReady()) {
+            return [];
+        }
+
+        try {
+            return $this->where('user_id', $userId)->orderBy('created_at', 'DESC')->findAll();
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
+    public function isReady(): bool
+    {
+        if ($this->tableReady !== null) {
+            return (bool) $this->tableReady;
+        }
+
+        try {
+            $db = \Config\Database::connect();
+            $this->tableReady = $db->tableExists($this->table);
+        } catch (\Throwable $e) {
+            $this->tableReady = false;
+        }
+
+        return (bool) $this->tableReady;
     }
 }

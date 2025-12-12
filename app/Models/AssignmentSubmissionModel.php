@@ -138,3 +138,4 @@ class AssignmentSubmissionModel extends Model
         }
     }
 }
+

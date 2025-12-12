@@ -294,3 +294,4 @@ class StudentAssignments extends BaseController
         return $this->response->download($filePath, null);
     }
 }
+

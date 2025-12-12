@@ -33,8 +33,15 @@ class Notifications extends BaseController
             return $this->response->setJSON(['error' => 'User not found'], ResponseInterface::HTTP_NOT_FOUND);
         }
 
-        $unreadCount = $this->notificationModel->getUnreadCount($user['id']);
-        $notifications = $this->notificationModel->getNotificationsForUser($user['id']);
+        $unreadCount = 0;
+        $notifications = [];
+        try {
+            $unreadCount = $this->notificationModel->getUnreadCount($user['id']);
+            $notifications = $this->notificationModel->getNotificationsForUser($user['id']);
+        } catch (\Throwable $e) {
+            $unreadCount = 0;
+            $notifications = [];
+        }
 
         return $this->response->setJSON([
             'unread_count' => $unreadCount,
@@ -62,7 +69,11 @@ class Notifications extends BaseController
         }
 
         // Check if notification belongs to user
-        $notification = $this->notificationModel->find($id);
+        try {
+            $notification = $this->notificationModel->find($id);
+        } catch (\Throwable $e) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Notifications are not available'], ResponseInterface::HTTP_OK);
+        }
         if (!$notification || $notification['user_id'] != $user['id']) {
             return $this->response->setJSON(['success' => false, 'message' => 'Notification not found']);
         }
@@ -89,7 +100,12 @@ class Notifications extends BaseController
             return $this->response->setJSON(['error' => 'User not found'], ResponseInterface::HTTP_NOT_FOUND);
         }
 
-        $notifications = $this->notificationModel->getNotificationsForUser($user['id']);
+        $notifications = [];
+        try {
+            $notifications = $this->notificationModel->getAllNotificationsForUser($user['id']);
+        } catch (\Throwable $e) {
+            $notifications = [];
+        }
 
         return $this->response->setJSON([
             'notifications' => $notifications
